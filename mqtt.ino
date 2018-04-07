@@ -49,7 +49,7 @@ void ProcessMqtt()
 //	mqttClient.publish(topic, (byte*)message, len, retained);
 //}
 
-void PublishMqtt(char* topic, char* message, int len, boolean retained)
+void PublishMqtt(const char* topic, const char* message, int len, boolean retained)
 {
 	Serial.print(F("Publish. topic="));
 	Serial.print(topic);
@@ -140,7 +140,8 @@ void PublishHeaterRelayState(byte id, bool value, bool isRefresh)
 {
 	if (!mqttClient.connected()) return;
 
-	char* topic = "cha/ts/hr/?";
+	char topic[12];
+	strcpy(topic, "cha/ts/hr/?");
 	topic[7] = isRefresh ? 'H' : 'h';
 	topic[10] = byteToHexChar(id);
 	PublishMqtt(topic, value ? "1" : "0", 1, !isRefresh);
@@ -150,7 +151,8 @@ void PublishBoilerRelayState(byte id, bool value, bool isRefresh)
 {
 	if (!mqttClient.connected()) return;
 
-	char* topic = "cha/ts/br/?";
+	char topic[12];
+	strcpy(topic, "cha/ts/br/?");
 	topic[7] = isRefresh ? 'B' : 'b';
 	topic[10] = byteToHexChar(id);
 
@@ -162,7 +164,8 @@ void PublishBoilerSensorT(byte id, bool isRefresh)
 {
 	if (!mqttClient.connected()) return;
 
-	char* topic = "cha/ts/bs/?";
+	char topic[12];
+	strcpy(topic, "cha/ts/bs/?");
 	topic[7] = isRefresh ? 'B': 'b';
 	topic[10] = byteToHexChar(id);
 
@@ -179,7 +182,7 @@ void PublishBoilerSettings()
 {
 	if (!mqttClient.connected()) return;
 
-	char* topic = "cha/ts/settings/bl";
+	const char* topic = "cha/ts/settings/bl";
 	int idx = 0;
 
 	buffer[idx++] = boilerSettings.Mode;
@@ -215,7 +218,7 @@ void PublishRoomSensorSettings()
 {
 	if (!mqttClient.connected()) return;
 
-	char* topic = "cha/ts/settings/rs";
+	const char* topic = "cha/ts/settings/rs";
 
 	int idx = 0;
 	idx = setHexByte(buffer, roomSensorSettingsCount, idx); // count 2 bytes
@@ -233,8 +236,7 @@ void PublishRoomSensorNamesAndOrder()
 {
 	if (!mqttClient.connected()) return;
 
-	char* topic = "cha/ts/names/rs";
-	int idx = 0;
+	const char* topic = "cha/ts/names/rs";
 
 	int length = eeprom_read_word((uint16_t *)STORAGE_ADDRESS_DATA);
 	//Serial.print("load name & order data. len=");
@@ -242,7 +244,7 @@ void PublishRoomSensorNamesAndOrder()
 
 	for (int i = 0; i < length; i++)
 	{
-		byte b = eeprom_read_byte((uint8_t *)(STORAGE_ADDRESS_DATA + 2 + i));
+		byte b = eeprom_read_byte((const uint8_t *)(STORAGE_ADDRESS_DATA + 2 + i));
 		buffer[i] = b;
 	}
 
@@ -379,13 +381,23 @@ void callback(char* topic, byte * payload, unsigned int len) {
 			int yr, month, day;
 			int hr, min, sec;
 
-			yr = 2000 + (*data++ - '0') * 10 + (*data++ - '0');
-			month = (*data++ - '0') * 10 + (*data++ - '0');
-			day = (*data++ - '0') * 10 + (*data++ - '0');
-			*data++;
-			hr = (*data++ - '0') * 10 + (*data++ - '0');
-			min = (*data++ - '0') * 10 + (*data++ - '0');
-			sec = (*data++ - '0') * 10 + (*data++ - '0');
+			yr = 2000 + (*data++ - '0') * 10;
+			yr += (*data++ - '0');
+
+			month = (*data++ - '0') * 10;
+			month += (*data++ - '0');
+
+			day = (*data++ - '0') * 10;
+			day += (*data++ - '0');
+
+			data++;
+
+			hr = (*data++ - '0') * 10;
+			hr += (*data++ - '0');
+			min = (*data++ - '0') * 10;
+			min += (*data++ - '0');
+			sec = (*data++ - '0') * 10;
+			sec += (*data++ - '0');
 
 			setTime(hr, min, sec, day, month, yr);
 			//RTC.set(now());
@@ -414,7 +426,7 @@ void callback(char* topic, byte * payload, unsigned int len) {
 
 void publishTempSensorData()
 {
-	char* topic = "cha/ts/sensors";
+	const char* topic = "cha/ts/sensors";
 
 	int idx = 0;
 	for (byte i = 0; i < ds18b20SensorCount; i++)

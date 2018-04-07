@@ -98,14 +98,14 @@ const byte PIN_BL_RESERVE2 = 41;
 const byte PIN_BL_RESERVE3 = 43;
 const byte PIN_BL_RESERVE4 = 45;
 
-typedef struct RoomSensorSettingStructure {
+struct RoomSensorSettingStructure {
 	int id;
 	int targetT;
 	byte relayId;
 };
 
 
-typedef struct BoilerSettingStructure {
+struct BoilerSettingStructure {
 	char Mode;
 
 	int CollectorSwitchOnTempDiff;

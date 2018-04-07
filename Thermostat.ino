@@ -264,7 +264,7 @@ void circPumpPumpOn()
 		_boilerRelayOn(BL_CIRC_PUMP);
 }
 
-void circPumpOnTimer()
+void circPumpOnTimer(int tag)
 {
 	if (circPumpStartingAlarm < 0xFF)
 	{

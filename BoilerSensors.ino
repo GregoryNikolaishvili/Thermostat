@@ -144,7 +144,7 @@ char Temperature::getTrend()
 
 	// simple linear regression algorithm
 	float slope = (xybar - xbar*ybar) / (xsqbar - xbar*xbar);
-	float intercept = ybar - slope * xbar;
+	//float intercept = ybar - slope * xbar;
 
 	//Serial.print("xbar = "); Serial.println(xbar);
 	//Serial.print("ybar = "); Serial.println(ybar);
