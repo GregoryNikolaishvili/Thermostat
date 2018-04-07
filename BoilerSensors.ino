@@ -19,6 +19,7 @@ void InitTemperatureSensors()
 	delay(10);
 	solarSensor.readRTD_step2();
 	delay(65);
+	lastReadSolarPanelRTD = solarSensor.readRTD_step3();
 
 	startDS18B20TemperatureMeasurements();
 }
@@ -319,12 +320,11 @@ void ProcessBoilerSensors()
 
 int readSolarPaneT()
 {
-	uint16_t rtd = solarSensor.readRTD_step3();
-	float temperature = solarSensor.temperature(rtd, 1000, RREF);
+	float temperature = solarSensor.temperature(lastReadSolarPanelRTD, 1000.0, RREF);
 
-	//Serial.print("RTD value: "); Serial.println(rtd);
-	Serial.print(F("RTD Resistance = ")); Serial.println(RREF * rtd / 32768, 8);
-	Serial.print(F("RTD Temperature = ")); Serial.println(temperature);
+	//Serial.print("RTD value: "); Serial.println(lastReadSolarPanelRTD);
+	//Serial.print(F("RTD Resistance = ")); Serial.println(RREF * lastReadSolarPanelRTD / 32768, 8);
+	//Serial.print(F("RTD Temperature = ")); Serial.println(temperature);
 
 	// Check and print any faults
 	uint8_t fault = solarSensor.readFault();

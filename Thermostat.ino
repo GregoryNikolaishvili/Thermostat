@@ -47,6 +47,8 @@ unsigned long secondTicks = 0;
 
 unsigned int thermostatControllerState = 0;
 
+uint16_t lastReadSolarPanelRTD;
+
 void setup()
 {
 	wdt_disable();
@@ -144,7 +146,7 @@ void oncePerHalfSecond(void)
 		solarSensor.readRTD_step2();
 	if (halfSecondTicks % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0)
 	{
-		solarSensor.readRTD_step3();
+		lastReadSolarPanelRTD = solarSensor.readRTD_step3();
 		ProcessBoilerSensors();
 	}
 
