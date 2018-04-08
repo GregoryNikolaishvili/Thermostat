@@ -1,14 +1,18 @@
+#define REQUIRESALARMS false // FOR DS18B20 library
+#define MQTT_MAX_PACKET_SIZE 256 // FOR PubSubClient library
+#define MQTT_SOCKET_TIMEOUT 5 // FOR PubSubClient library
+
 #include "Thermostat.h"
 
-#include <Time.h>					// http://www.pjrc.com/teensy/td_libs_Time.html
-#include <TimeAlarms.h>				// http://www.pjrc.com/teensy/td_libs_TimeAlarms.html
-#include <DS1307RTC.h>				// http://www.pjrc.com/teensy/td_libs_DS1307RTC.html
+#include <TimeLib.h>				// https://github.com/PaulStoffregen/Time
+#include <TimeAlarms.h>				// https://github.com/PaulStoffregen/TimeAlarms
+#include <DS1307RTC.h>				// https://github.com/PaulStoffregen/DS1307RTC
 //#include <Wire.h>
 #include <SPI.h>
 #include <Ethernet.h>
 #include <PubSubClient.h>			// https://github.com/knolleary/pubsubclient
-#include <Adafruit_MAX31865.h>
-#include <OneWire.h>				// http://www.pjrc.com/teensy/td_libs_OneWire.html
+#include <Adafruit_MAX31865.h>		// https://github.com/adafruit/Adafruit_MAX31865
+#include <OneWire.h>				// https://github.com/PaulStoffregen/OneWire
 #include <DallasTemperature.h>	    // https://github.com/milesburton/Arduino-Temperature-Control-Library
 #include <avr/wdt.h>
 
