@@ -144,7 +144,7 @@ char Temperature::getTrend()
 	xsqbar = xsqbar / LINEAR_REGRESSION_POINT_COUNT;
 
 	// simple linear regression algorithm
-	float slope = (xybar - xbar*ybar) / (xsqbar - xbar*xbar);
+	float slope = (xybar - xbar * ybar) / (xsqbar - xbar * xbar);
 	//float intercept = ybar - slope * xbar;
 
 	//Serial.print("xbar = "); Serial.println(xbar);
@@ -166,7 +166,7 @@ char Temperature::getTrend()
 }
 
 // boiler & solar
-void ProcessBoilerSensors()
+void ProcessTemperatureSensors()
 {
 	int T1 = readSolarPaneT();
 	int T2 = readTankBottomT();
@@ -318,6 +318,9 @@ void ProcessBoilerSensors()
 	}
 }
 
+int lastGoodSolarPanelTemperature = T_UNDEFINED;
+int solarPanelTemperatureErrorCount = 0;
+
 int readSolarPaneT()
 {
 	float temperature = solarSensor.temperature(lastReadSolarPanelRTD, 1000.0, RREF);
@@ -350,9 +353,17 @@ int readSolarPaneT()
 		}
 		solarSensor.clearFault();
 
+		solarPanelTemperatureErrorCount++;
+		if (solarPanelTemperatureErrorCount <= 5)
+			return lastGoodSolarPanelTemperature;
+
 		return T_UNDEFINED;
 	}
 	else
-		return round(temperature) * 10;
+	{
+		lastGoodSolarPanelTemperature = round(temperature) * 10;
+		solarPanelTemperatureErrorCount = 0;
+		return lastGoodSolarPanelTemperature;
+	}
 }
 

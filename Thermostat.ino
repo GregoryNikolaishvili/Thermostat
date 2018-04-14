@@ -58,7 +58,8 @@ void setup()
 	wdt_disable();
 
 	Serial.begin(115200);
-	Serial.println("Initializing..");
+  Serial.println();
+  Serial.println(F("Initializing.. ver. 1.0.0"));
 
 	pinMode(PIN_BLINKING_LED, OUTPUT);
 	digitalWrite(PIN_BLINKING_LED, LOW); // Turn on led at start
@@ -68,7 +69,6 @@ void setup()
 
 	//pinMode(PIN_MAX31865_SELECT, OUTPUT);
 	//digitalWrite(PIN_MAX31865_SELECT, HIGH); // Disable MAX31865
-
 
 	pinMode(PIN_SD_CARD_SELECT, OUTPUT);
 	digitalWrite(PIN_SD_CARD_SELECT, HIGH); // Disable SD card
@@ -102,7 +102,7 @@ void setup()
 
 	InitMqtt();
 
-	wdt_enable(WDTO_4S);
+	wdt_enable(WDTO_8S);
 
 	Serial.println(F("Start"));
 }
@@ -148,10 +148,11 @@ void oncePerHalfSecond(void)
 		solarSensor.readRTD_step1();
 	if ((halfSecondTicks - 1) % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0) // 0.5 second before processing temperatures
 		solarSensor.readRTD_step2();
+	
 	if (halfSecondTicks % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0)
 	{
 		lastReadSolarPanelRTD = solarSensor.readRTD_step3();
-		ProcessBoilerSensors();
+		ProcessTemperatureSensors();
 	}
 
 	if ((halfSecondTicks % 2) == 0)
