@@ -59,7 +59,7 @@ void setup()
 
 	Serial.begin(115200);
   Serial.println();
-  Serial.println(F("Initializing.. ver. 1.0.0"));
+  Serial.println(F("Initializing.. ver. 1.0.1"));
 
 	pinMode(PIN_BLINKING_LED, OUTPUT);
 	digitalWrite(PIN_BLINKING_LED, LOW); // Turn on led at start
@@ -142,11 +142,11 @@ void oncePerHalfSecond(void)
 	blinkingLedState = !blinkingLedState;
 	digitalWrite(PIN_BLINKING_LED, blinkingLedState);
 
-	if ((halfSecondTicks - 4) % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0) // 2 second before processing temperatures
+	if ((halfSecondTicks + 4) % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0) // 2 second before processing temperatures
 		startDS18B20TemperatureMeasurements();
-	if ((halfSecondTicks - 2) % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0) // 1 second before processing temperatures
+	if ((halfSecondTicks + 2) % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0) // 1 second before processing temperatures
 		solarSensor.readRTD_step1();
-	if ((halfSecondTicks - 1) % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0) // 0.5 second before processing temperatures
+	if ((halfSecondTicks + 1) % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0) // 0.5 second before processing temperatures
 		solarSensor.readRTD_step2();
 	
 	if (halfSecondTicks % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0)
