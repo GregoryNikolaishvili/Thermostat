@@ -112,7 +112,7 @@ void saveData(const void* data, int length)
 }
 
 
-void resetAlarms(int tag)
+void resetAlarms(int tag, int tag2)
 {
 	freeAlarms();
 

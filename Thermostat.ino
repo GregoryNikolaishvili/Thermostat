@@ -59,7 +59,7 @@ void setup()
 
 	Serial.begin(115200);
   Serial.println();
-  Serial.println(F("Initializing.. ver. 1.0.1"));
+  Serial.println(F("Initializing.. ver. 1.0.2"));
 
 	pinMode(PIN_BLINKING_LED, OUTPUT);
 	digitalWrite(PIN_BLINKING_LED, LOW); // Turn on led at start
@@ -271,7 +271,7 @@ void circPumpPumpOn()
 		_boilerRelayOn(BL_CIRC_PUMP);
 }
 
-void circPumpOnTimer(int tag)
+void circPumpOnTimer(int tag, int tag2)
 {
 	if (circPumpStartingAlarm < 0xFF)
 	{
