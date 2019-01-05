@@ -59,7 +59,7 @@ void setup()
 
 	Serial.begin(115200);
   Serial.println();
-  Serial.println(F("Initializing.. ver. 1.0.2"));
+  Serial.println(F("Initializing.. ver. 1.0.3"));
 
 	pinMode(PIN_BLINKING_LED, OUTPUT);
 	digitalWrite(PIN_BLINKING_LED, LOW); // Turn on led at start
@@ -114,7 +114,6 @@ void loop()
 
 	uint32_t dt = previousMillis > _current_millis ? 1 + previousMillis + ~_current_millis : _current_millis - previousMillis;
 
-	//if ((_current_millis < previousMillis) || (_current_millis - previousMillis >= 500))
 	if (dt >= 500)
 	{
 		wdt_reset();
@@ -137,7 +136,6 @@ void oncePerHalfSecond(void)
 
 	// Blinking
 	static uint8_t blinkingLedState = LOW;
-	//static uint8_t blinkingLedManualMode = LOW;
 
 	blinkingLedState = !blinkingLedState;
 	digitalWrite(PIN_BLINKING_LED, blinkingLedState);
