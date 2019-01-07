@@ -254,12 +254,6 @@ void ProcessTemperatureSensors()
 
 	isBoilerTankOverheated = CheckBoilerTank(TBoiler);
 
-	if (!isBoilerTankOverheated)
-	{
-		burnerOn();
-	}
-
-
 	if (isSolarOk && isValidT(TSolar) && isValidT(T2) && TSolar > boilerSettings.CollectorMinimumSwitchOnT) // T2 = Tank bottom
 	{
 		if (!isSolarPumpOn() && (TSolar >= T2 + boilerSettings.CollectorSwitchOnTempDiff))
@@ -340,8 +334,10 @@ bool CheckBoilerTank(int TBoiler)
 		return false;
 	}
 
+	bool turnBurnerOn = true;
 	if (TBoiler >= boilerSettings.MaxTankT) // SMX, 60
 	{
+		turnBurnerOn = false;
 		burnerOff();
 
 		if (state_set_error_bit(ERR_SMX))
@@ -353,8 +349,9 @@ bool CheckBoilerTank(int TBoiler)
 			Serial.println(F("SMX deactivated"));
 	}
 
-	if (TBoiler >= 950) // 95 degree is absolute max for boiler tank
+	if (TBoiler >= boilerSettings.AbsoluteMaxTankT) // 95 degree is absolute max for boiler tank
 	{
+		turnBurnerOn = false;
 		burnerOff();
 
 		// Try to cool down boiler with all means
@@ -373,6 +370,9 @@ bool CheckBoilerTank(int TBoiler)
 
 	if (state_clear_error_bit(ERR_95_DEGREE))
 		Serial.println(F("95 degree in tank deactivated"));
+
+	if (turnBurnerOn)
+		burnerOn();
 
 	return false;
 }

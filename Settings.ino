@@ -18,8 +18,8 @@ void readSettings()
 	boilerSettings.CollectorEmergencySwitchOffT = 1400; // EMOF, 110...200
 	boilerSettings.CollectorEmergencySwitchOnT = 1200; // EMON, 0...EMOF - 3
 
-	boilerSettings.CollectorMinimumSwitchOnT = 10; // CMN, -10...90
-	boilerSettings.CollectorAntifreezeT = 4; // CFR, -10...10
+	boilerSettings.CollectorMinimumSwitchOnT = 100; // CMN, -10...90
+	boilerSettings.CollectorAntifreezeT = 40; // CFR, -10...10
 	boilerSettings.MaxTankT = 600; // SMX, Max 95
 	boilerSettings.AbsoluteMaxTankT = 950; // 95
 

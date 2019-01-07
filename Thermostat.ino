@@ -59,7 +59,7 @@ void setup()
 
 	Serial.begin(115200);
   Serial.println();
-  Serial.println(F("Initializing.. ver. 1.0.3"));
+  Serial.println(F("Initializing.. ver. 1.0.5"));
 
 	pinMode(PIN_BLINKING_LED, OUTPUT);
 	digitalWrite(PIN_BLINKING_LED, LOW); // Turn on led at start
