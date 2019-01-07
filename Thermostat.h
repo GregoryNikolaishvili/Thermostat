@@ -116,7 +116,8 @@ struct BoilerSettingStructure {
 	int CollectorMinimumSwitchOnT; // CMN, Minimum temperature of collector, which must be exceeded so that the solar	pump is switched, 10, (-10..90)
  	int CollectorAntifreezeT; // CFR, Antifreeze function activates the loading circuit between collector and store if the adjusted antifreeze function is underrun in order to protect the medium that it will not freeze, 4 (-10..10)
 	int MaxTankT; // SMX Maximum temperature of tank, 60
-	
+	int AbsoluteMaxTankT; // Absolute Maximum temperature of tank, 95
+
 	int PoolSwitchOnT;
 	int PoolSwitchOffT;
 

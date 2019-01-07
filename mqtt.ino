@@ -193,6 +193,7 @@ void PublishBoilerSettings()
 	idx = setHexT(buffer, boilerSettings.CollectorMinimumSwitchOnT, idx);
 	idx = setHexT(buffer, boilerSettings.CollectorAntifreezeT, idx);
 	idx = setHexT(buffer, boilerSettings.MaxTankT, idx);
+	idx = setHexT(buffer, boilerSettings.AbsoluteMaxTankT, idx);
 
 	idx = setHexT(buffer, boilerSettings.PoolSwitchOnT, idx);
 	idx = setHexT(buffer, boilerSettings.PoolSwitchOffT, idx);
@@ -341,6 +342,7 @@ void callback(char* topic, byte * payload, unsigned int len) {
 		boilerSettings.CollectorMinimumSwitchOnT = readHexT(p); p += 4;
 		boilerSettings.CollectorAntifreezeT = readHexT(p); p += 4;
 		boilerSettings.MaxTankT = readHexT(p); p += 4;
+		boilerSettings.AbsoluteMaxTankT = readHexT(p); p += 4;
 
 		boilerSettings.PoolSwitchOnT = readHexT(p); p += 4;
 		boilerSettings.PoolSwitchOffT = readHexT(p); p += 4;

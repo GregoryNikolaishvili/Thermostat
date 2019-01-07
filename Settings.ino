@@ -21,6 +21,7 @@ void readSettings()
 	boilerSettings.CollectorMinimumSwitchOnT = 10; // CMN, -10...90
 	boilerSettings.CollectorAntifreezeT = 4; // CFR, -10...10
 	boilerSettings.MaxTankT = 600; // SMX, Max 95
+	boilerSettings.AbsoluteMaxTankT = 950; // 95
 
 	boilerSettings.PoolSwitchOnT = 550;
 	boilerSettings.PoolSwitchOffT = 500;
