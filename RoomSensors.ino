@@ -79,6 +79,8 @@ void ProcessRoomSensors()
 {
 	if (boilerSettings.Mode != BOILER_MODE_WINTER)
 		return;
+	if (isBoilerTankOverheated)
+		return;
 
 	for (byte i = 0; i < roomSensorCount; i++)
 	{
@@ -93,6 +95,8 @@ void ProcessRoomSensors()
 void ProcessRoomSensor(int id, bool checkCirculatingPump)
 {
 	if (boilerSettings.Mode != BOILER_MODE_WINTER)
+		return;
+	if (isBoilerTankOverheated)
 		return;
 
 	int T = getRoomT(id);

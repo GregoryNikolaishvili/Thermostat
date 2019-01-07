@@ -1,7 +1,7 @@
 int sunriseMin;
 int sunsetMin;
 
-const byte DEF_SETTINGS_VERSION_BOILER = 0x0B;
+const byte DEF_SETTINGS_VERSION_BOILER = 0x0C;
 const byte DEF_SETTINGS_VERSION_ROOM_SENSORS = 0x0B;
 
 const char OFF_SUNRISE = 'S';
@@ -12,14 +12,15 @@ const char OFF_DURATION = 'D';
 void readSettings()
 {
 	boilerSettings.Mode = 'N';
-	boilerSettings.CollectorSwitchOnTempDiff = 80; // range: 2 - 20
-	boilerSettings.CollectorSwitchOffTempDiff = 40; // range: 0 - On -2
+	boilerSettings.CollectorSwitchOnTempDiff = 80; // 2...20
+	boilerSettings.CollectorSwitchOffTempDiff = 40; // 0 ... EMOF - 2
 
-	boilerSettings.EmergencyCollectorSwitchOffT = 1300; // max 200
-	boilerSettings.EmergencyCollectorSwitchOnT = 1200; // max OFF - 3
+	boilerSettings.CollectorEmergencySwitchOffT = 1400; // EMOF, 110...200
+	boilerSettings.CollectorEmergencySwitchOnT = 1200; // EMON, 0...EMOF - 3
 
-	boilerSettings.CollectorCoolingT = 1100; // CMX
-	boilerSettings.MaxTankT = 700; // SMX
+	boilerSettings.CollectorMinimumSwitchOnT = 10; // CMN, -10...90
+	boilerSettings.CollectorAntifreezeT = 4; // CFR, -10...10
+	boilerSettings.MaxTankT = 600; // SMX, Max 95
 
 	boilerSettings.PoolSwitchOnT = 550;
 	boilerSettings.PoolSwitchOffT = 500;

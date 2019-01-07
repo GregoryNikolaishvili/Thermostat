@@ -166,7 +166,7 @@ void PublishBoilerSensorT(byte id, bool isRefresh)
 
 	char topic[12];
 	strcpy(topic, "cha/ts/bs/?");
-	topic[7] = isRefresh ? 'B': 'b';
+	topic[7] = isRefresh ? 'B' : 'b';
 	topic[10] = byteToHexChar(id);
 
 	Temperature* bsv = boilerSensorsValues[id];
@@ -188,9 +188,10 @@ void PublishBoilerSettings()
 	buffer[idx++] = boilerSettings.Mode;
 	idx = setHexT(buffer, boilerSettings.CollectorSwitchOnTempDiff, idx);
 	idx = setHexT(buffer, boilerSettings.CollectorSwitchOffTempDiff, idx);
-	idx = setHexT(buffer, boilerSettings.EmergencyCollectorSwitchOffT, idx);
-	idx = setHexT(buffer, boilerSettings.EmergencyCollectorSwitchOnT, idx);
-	idx = setHexT(buffer, boilerSettings.CollectorCoolingT, idx);
+	idx = setHexT(buffer, boilerSettings.CollectorEmergencySwitchOffT, idx);
+	idx = setHexT(buffer, boilerSettings.CollectorEmergencySwitchOnT, idx);
+	idx = setHexT(buffer, boilerSettings.CollectorMinimumSwitchOnT, idx);
+	idx = setHexT(buffer, boilerSettings.CollectorAntifreezeT, idx);
 	idx = setHexT(buffer, boilerSettings.MaxTankT, idx);
 
 	idx = setHexT(buffer, boilerSettings.PoolSwitchOnT, idx);
@@ -335,9 +336,10 @@ void callback(char* topic, byte * payload, unsigned int len) {
 		boilerSettings.Mode = *p++;
 		boilerSettings.CollectorSwitchOnTempDiff = readHexT(p); p += 4;
 		boilerSettings.CollectorSwitchOffTempDiff = readHexT(p); p += 4;
-		boilerSettings.EmergencyCollectorSwitchOffT = readHexT(p); p += 4;
-		boilerSettings.EmergencyCollectorSwitchOnT = readHexT(p); p += 4;
-		boilerSettings.CollectorCoolingT = readHexT(p); p += 4;
+		boilerSettings.CollectorEmergencySwitchOffT = readHexT(p); p += 4;
+		boilerSettings.CollectorEmergencySwitchOnT = readHexT(p); p += 4;
+		boilerSettings.CollectorMinimumSwitchOnT = readHexT(p); p += 4;
+		boilerSettings.CollectorAntifreezeT = readHexT(p); p += 4;
 		boilerSettings.MaxTankT = readHexT(p); p += 4;
 
 		boilerSettings.PoolSwitchOnT = readHexT(p); p += 4;

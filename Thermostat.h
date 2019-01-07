@@ -22,7 +22,7 @@ const unsigned int ERR_GENERAL = 1;
 const unsigned int ERR_DS18B20_SENSOR = 2;
 const unsigned int ERR_EMOF = 4;
 const unsigned int ERR_95_DEGREE = 8;
-const unsigned int ERR_CMX = 16;
+const unsigned int ERR_CFR = 16;
 const unsigned int ERR_SMX = 32;
 
 const unsigned int ERR_T1 = 64;
@@ -111,10 +111,11 @@ struct BoilerSettingStructure {
 	int CollectorSwitchOnTempDiff;
 	int CollectorSwitchOffTempDiff;
 
-	int EmergencyCollectorSwitchOffT; // EMOF, Collector maximum switch - off temperature 130
-	int EmergencyCollectorSwitchOnT; // EMON, Collector	maximum switch - on temperature 120
-	int CollectorCoolingT; // CMX, Maximum temperature of collector	(Collector cooling function) 110
-	int MaxTankT; // SMX Maximum temperature of tank
+	int CollectorEmergencySwitchOffT; // EMOF, Collector maximum switch - off temperature 140 (110...200)
+	int CollectorEmergencySwitchOnT; // EMON, Collector	maximum switch - on temperature 120 (0...EMOF - 2)
+	int CollectorMinimumSwitchOnT; // CMN, Minimum temperature of collector, which must be exceeded so that the solar	pump is switched, 10, (-10..90)
+ 	int CollectorAntifreezeT; // CFR, Antifreeze function activates the loading circuit between collector and store if the adjusted antifreeze function is underrun in order to protect the medium that it will not freeze, 4 (-10..10)
+	int MaxTankT; // SMX Maximum temperature of tank, 60
 	
 	int PoolSwitchOnT;
 	int PoolSwitchOffT;

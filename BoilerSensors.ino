@@ -6,6 +6,11 @@ Temperature* boilerSensorsValues[BOILER_SENSOR_COUNT];
 
 BoilerSettingStructure boilerSettings;
 
+bool isBoilerTankOverheated = false;
+int lastGoodSolarPanelTemperature = T_UNDEFINED;
+int solarPanelTemperatureErrorCount = 0;
+
+
 void InitTemperatureSensors()
 {
 	for (int i = 0; i < BOILER_SENSOR_COUNT; i++)
@@ -168,24 +173,24 @@ char Temperature::getTrend()
 // boiler & solar
 void ProcessTemperatureSensors()
 {
-	int T1 = readSolarPaneT(); // Solar panel T
+	int TSolar = readSolarPaneT(); // Solar panel T
 	int T2 = readTankBottomT(); // Tank bottom
 	int T3 = readTankTopT(); // Tank top
 
 	int TF = readFurnaceT();
 
-	Serial.print("T1 = "); Serial.println(T1);
+	Serial.print("T1 = "); Serial.println(TSolar);
 	Serial.print("T2 = "); Serial.println(T2);
 	Serial.print("T3 = "); Serial.println(T3);
 	Serial.print("T_furnace = "); Serial.println(TF);
 
-	setBoilerT(T_SOLAR_PANEL_T, T1);
+	setBoilerT(T_SOLAR_PANEL_T, TSolar);
 	setBoilerT(T_TANK_BOTTOM, T2);
 	setBoilerT(T_TANK_TOP, T3);
 	setBoilerT(T_FURNACE, TF);
 
 	// Read sensor data
-	if (!isValidT(T1))
+	if (!isValidT(TSolar))
 	{
 		if (state_set_error_bit(ERR_T1))
 		{
@@ -245,83 +250,83 @@ void ProcessTemperatureSensors()
 
 	////////////////// End of Read sensor data
 
-	// Check emergency situations
-	bool isSolarPanelsOk = CheckSolarPanels(T1);
-	bool isBoilerTankOk = CheckBoilerTank(TBoiler);
+	bool isSolarOk = CheckSolarPanels(TSolar);
 
-	if (isSolarPanelsOk && isValidT(T1) && (T1 >= boilerSettings.CollectorCoolingT)) // CMX, 110
+	isBoilerTankOverheated = CheckBoilerTank(TBoiler);
+
+	if (!isBoilerTankOverheated)
 	{
-		solarPumpOn();
-		if (state_set_error_bit(ERR_CMX))
-			Serial.println(F("CMX activated"));
-		return;
+		burnerOn();
 	}
 
-	if (state_clear_error_bit(ERR_CMX))
-		Serial.println(F("CMX deactivated"));
 
-	if (isValidT(TBoiler) && (TBoiler >= boilerSettings.MaxTankT)) // SMX, 70
+	if (isSolarOk && isValidT(TSolar) && isValidT(T2) && TSolar > boilerSettings.CollectorMinimumSwitchOnT) // T2 = Tank bottom
 	{
-		solarPumpOff();
-		burnerOff();
-
-		if (state_set_error_bit(ERR_SMX))
-			Serial.println(F("SMX activated"));
-		return;
-	}
-
-	if (state_clear_error_bit(ERR_SMX))
-		Serial.println(F("SMX deactivated"));
-
-	if (isValidT(T1) && isValidT(T2))
-	{
-		if (!isSolarPumpOn() && (T1 >= T2 + boilerSettings.CollectorSwitchOnTempDiff))
+		if (!isSolarPumpOn() && (TSolar >= T2 + boilerSettings.CollectorSwitchOnTempDiff))
 		{
 			solarPumpOn();
 		}
 		else
-			if (isSolarPumpOn() && (T1 < T2 + boilerSettings.CollectorSwitchOffTempDiff))
+		{
+			if (isSolarPumpOn() && (TSolar < T2 + boilerSettings.CollectorSwitchOffTempDiff))
 			{
 				solarPumpOff();
 			}
+		}
 	}
 
-	if (isValidT(T3) && (boilerSettings.Mode == BOILER_MODE_SUMMER_POOL))
+	if (!isBoilerTankOverheated && isValidT(T3)) // T3 = Tank top
 	{
-		if (T3 >= boilerSettings.PoolSwitchOnT)
-			circPumpPumpOn();
-		else
-			if (T3 < boilerSettings.PoolSwitchOffT)
-				circPumpPumpOff();
+		if (boilerSettings.Mode == BOILER_MODE_SUMMER_POOL)
+		{
+			if (T3 >= boilerSettings.PoolSwitchOnT)
+				circPumpPumpOn();
+			else
+				if (T3 < boilerSettings.PoolSwitchOffT)
+					circPumpPumpOff();
+		}
 	}
 }
 
-bool CheckSolarPanels(int T1)
+bool CheckSolarPanels(int TSolar)
 {
-	if (isValidT(T1))
+	if (isValidT(TSolar))
 	{
 		// Is solar collector too hot?
-		if (T1 >= boilerSettings.EmergencyCollectorSwitchOffT) // 130
+		if (TSolar >= boilerSettings.CollectorEmergencySwitchOffT) // 140
 		{
 			solarPumpOff();
-
 			if (state_set_error_bit(ERR_EMOF))
 				Serial.println(F("EMOF activated"));
 			return false;
 		}
 
 		// If ERR_EMOF was already set (maybe earlier)
-		if (state_is_error_bit_set(ERR_EMOF) && (T1 >= boilerSettings.EmergencyCollectorSwitchOnT)) // 120
+		if (state_is_error_bit_set(ERR_EMOF))
 		{
-			solarPumpOff();
+			if (TSolar >= boilerSettings.CollectorEmergencySwitchOnT) // 120
+			{
+				solarPumpOff();
+				Serial.println(F("EMOF is active. Waiting for collector to cool down to EmergencyCollectorSwitchOnT"));
+				return false;
+			}
 
-			Serial.println(F("EMOF is active. Waiting for collector to cool down to EmergencyCollectorSwitchOnT"));
+			if (state_clear_error_bit(ERR_EMOF))
+				Serial.println(F("EMOF deactivated"));
+		}
+
+		// Is solar collector too cold?
+		if (TSolar <= boilerSettings.CollectorAntifreezeT) // 4
+		{
+			solarPumpOn();
+			if (state_set_error_bit(ERR_CFR))
+				Serial.println(F("CFR activated"));
 			return false;
 		}
-	}
 
-	if (state_clear_error_bit(ERR_EMOF))
-		Serial.println(F("EMOF deactivated"));
+		if (state_clear_error_bit(ERR_CFR))
+			Serial.println(F("CFR deactivated"));
+	}
 
 	return true;
 }
@@ -331,29 +336,46 @@ bool CheckBoilerTank(int TBoiler)
 	if (!isValidT(TBoiler))
 	{
 		burnerOff();
+
 		return false;
+	}
+
+	if (TBoiler >= boilerSettings.MaxTankT) // SMX, 60
+	{
+		burnerOff();
+
+		if (state_set_error_bit(ERR_SMX))
+			Serial.println(F("SMX activated"));
+	}
+	else
+	{
+		if (state_clear_error_bit(ERR_SMX))
+			Serial.println(F("SMX deactivated"));
 	}
 
 	if (TBoiler >= 950) // 95 degree is absolute max for boiler tank
 	{
 		burnerOff();
-		solarPumpOff();
+
+		// Try to cool down boiler with all means
+		if (boilerSettings.Mode == BOILER_MODE_WINTER)
+		{
+			for (byte id = 0; id < HEATER_RELAY_COUNT; id++)
+				heaterRelayOn(id);
+		}
+		circPumpPumpOn(); // Turn on recirculating pump
 
 		if (state_set_error_bit(ERR_95_DEGREE))
 			Serial.println(F("95 degree in tank activated"));
-		return false;
+
+		return true;
 	}
 
 	if (state_clear_error_bit(ERR_95_DEGREE))
-	{
 		Serial.println(F("95 degree in tank deactivated"));
-	}
 
-	return true;
+	return false;
 }
-
-int lastGoodSolarPanelTemperature = T_UNDEFINED;
-int solarPanelTemperatureErrorCount = 0;
 
 int readSolarPaneT()
 {
