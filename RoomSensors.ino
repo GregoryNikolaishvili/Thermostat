@@ -109,12 +109,12 @@ void ProcessRoomSensor(int id, bool checkCirculatingPump)
 			int delta = T - rss->targetT;
 			bool relayIsOn = isHeaterRelayOn(rss->relayId);
 
-			if (relayIsOn && (delta >= 5)) // 0.5 degrees
+			if (relayIsOn && (delta >= 2)) // 0.2 degrees
 			{
 				heaterRelayOff(rss->relayId);
 			}
 			else
-				if (!relayIsOn && (delta <= -5)) // -0.5 degrees
+				if (!relayIsOn && (delta <= -2)) // -0.2 degrees
 				{
 					heaterRelayOn(rss->relayId);
 				}
