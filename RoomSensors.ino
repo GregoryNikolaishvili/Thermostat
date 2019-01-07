@@ -83,33 +83,14 @@ void ProcessRoomSensors()
 	for (byte i = 0; i < roomSensorCount; i++)
 	{
 		int id = roomSensorsIds[i];
-		int T = getRoomT(id);
-		if (isValidT(T))
-		{
-			RoomSensorSettingStructure* rss = getRoomSensorSettings(id);
 
-			if ((rss != NULL) && (rss->relayId > 0))
-			{
-				int delta = T - rss->targetT;
-				bool relayIsOn = isHeaterRelayOn(rss->relayId);
-
-				if (relayIsOn && (delta >= 5)) // 0.5 degrees
-				{
-					heaterRelayOff(rss->relayId);
-				}
-				else
-					if (!relayIsOn && (delta <= -5)) // -0.5 degrees
-					{
-						heaterRelayOn(rss->relayId);
-					}
-			}
-		}
+		ProcessRoomSensor(id, false);
 	}
 
 	CheckCirculatingPump();
 }
 
-void ProcessRoomSensor(int id)
+void ProcessRoomSensor(int id, bool checkCirculatingPump)
 {
 	if (boilerSettings.Mode != BOILER_MODE_WINTER)
 		return;
@@ -136,5 +117,6 @@ void ProcessRoomSensor(int id)
 		}
 	}
 
-	CheckCirculatingPump();
+	if (checkCirculatingPump)
+		CheckCirculatingPump();
 }

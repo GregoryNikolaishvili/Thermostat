@@ -111,9 +111,9 @@ struct BoilerSettingStructure {
 	int CollectorSwitchOnTempDiff;
 	int CollectorSwitchOffTempDiff;
 
-	int EmergencyCollectorSwitchOffT; // EMOF, Collector maximum switch - off temperature
-	int EmergencyCollectorSwitchOnT; // EMON, Collector	maximum switch - on temperature
-	int CollectorCoolingT; // CMX, Maximum temperature of collector	(Collector cooling function)
+	int EmergencyCollectorSwitchOffT; // EMOF, Collector maximum switch - off temperature 130
+	int EmergencyCollectorSwitchOnT; // EMON, Collector	maximum switch - on temperature 120
+	int CollectorCoolingT; // CMX, Maximum temperature of collector	(Collector cooling function) 110
 	int MaxTankT; // SMX Maximum temperature of tank
 	
 	int PoolSwitchOnT;

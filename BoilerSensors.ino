@@ -168,9 +168,9 @@ char Temperature::getTrend()
 // boiler & solar
 void ProcessTemperatureSensors()
 {
-	int T1 = readSolarPaneT();
-	int T2 = readTankBottomT();
-	int T3 = readTankTopT();
+	int T1 = readSolarPaneT(); // Solar panel T
+	int T2 = readTankBottomT(); // Tank bottom
+	int T3 = readTankTopT(); // Tank top
 
 	int TF = readFurnaceT();
 
@@ -184,8 +184,7 @@ void ProcessTemperatureSensors()
 	setBoilerT(T_TANK_TOP, T3);
 	setBoilerT(T_FURNACE, TF);
 
-	//if (boilerSettings.Mode == BOILER_MODE_SUMMER)
-
+	// Read sensor data
 	if (!isValidT(T1))
 	{
 		if (state_set_error_bit(ERR_T1))
@@ -195,9 +194,10 @@ void ProcessTemperatureSensors()
 		}
 	}
 	else
+	{
 		if (state_clear_error_bit(ERR_T1))
 			Serial.println(F("Solar sensor restored (T1)"));
-
+	}
 
 	if (!isValidT(T3))
 	{
@@ -206,8 +206,10 @@ void ProcessTemperatureSensors()
 		T3 = T2;
 	}
 	else
+	{
 		if (state_clear_error_bit(ERR_T3))
 			Serial.println(F("Boiler sensor restored (T3)"));
+	}
 
 	if (!isValidT(T2))
 	{
@@ -216,13 +218,12 @@ void ProcessTemperatureSensors()
 
 		if (isValidT(T3))
 			T2 = T3;
-		else
-			burnerOff();
 	}
 	else
+	{
 		if (state_clear_error_bit(ERR_T2))
 			Serial.println(F("Boiler sensor restored (T2)"));
-
+	}
 
 	if (!isValidT(TF))
 	{
@@ -233,45 +234,22 @@ void ProcessTemperatureSensors()
 		}
 	}
 	else
+	{
 		if (state_clear_error_bit(ERR_TF))
 			Serial.println(F("Furnace sensor restored (TF)"));
-
-	//////////////////
-
-	if (isValidT(T1) && (T1 >= boilerSettings.EmergencyCollectorSwitchOffT))
-	{
-		solarPumpOff();
-
-		if (state_set_error_bit(ERR_EMOF))
-			Serial.println(F("EMOF activated"));
-		return;
 	}
 
-	if (state_is_error_bit_set(ERR_EMOF) && isValidT(T1) && (T1 >= boilerSettings.EmergencyCollectorSwitchOnT))
-	{
-		Serial.println(F("EMOF_Activated and EmergencyCollectorSwitchOnT reached"));
-		solarPumpOff();
-		return;
-	}
+	int TBoiler = T3;
+	if (T2 > T3)
+		TBoiler = T2;
 
-	if (state_clear_error_bit(ERR_EMOF))
-		Serial.println(F("EMOF deactivated"));
+	////////////////// End of Read sensor data
 
+	// Check emergency situations
+	bool isSolarPanelsOk = CheckSolarPanels(T1);
+	bool isBoilerTankOk = CheckBoilerTank(TBoiler);
 
-	if (isValidT(T3) && (T3 >= 950)) // 95 degree is absolute max for boiler tank
-	{
-		solarPumpOff();
-		burnerOff();
-
-		if (state_set_error_bit(ERR_95_DEGREE))
-			Serial.println(F("95 degree in tank activated"));
-		return;
-	}
-
-	if (state_clear_error_bit(ERR_95_DEGREE))
-		Serial.println(F("95 degree in tank deactivated"));
-
-	if (isValidT(T1) && (T1 >= boilerSettings.CollectorCoolingT)) // CMX, 110
+	if (isSolarPanelsOk && isValidT(T1) && (T1 >= boilerSettings.CollectorCoolingT)) // CMX, 110
 	{
 		solarPumpOn();
 		if (state_set_error_bit(ERR_CMX))
@@ -282,7 +260,7 @@ void ProcessTemperatureSensors()
 	if (state_clear_error_bit(ERR_CMX))
 		Serial.println(F("CMX deactivated"));
 
-	if (isValidT(T3) && (T3 >= boilerSettings.MaxTankT)) // SMX, 70
+	if (isValidT(TBoiler) && (TBoiler >= boilerSettings.MaxTankT)) // SMX, 70
 	{
 		solarPumpOff();
 		burnerOff();
@@ -316,6 +294,62 @@ void ProcessTemperatureSensors()
 			if (T3 < boilerSettings.PoolSwitchOffT)
 				circPumpPumpOff();
 	}
+}
+
+bool CheckSolarPanels(int T1)
+{
+	if (isValidT(T1))
+	{
+		// Is solar collector too hot?
+		if (T1 >= boilerSettings.EmergencyCollectorSwitchOffT) // 130
+		{
+			solarPumpOff();
+
+			if (state_set_error_bit(ERR_EMOF))
+				Serial.println(F("EMOF activated"));
+			return false;
+		}
+
+		// If ERR_EMOF was already set (maybe earlier)
+		if (state_is_error_bit_set(ERR_EMOF) && (T1 >= boilerSettings.EmergencyCollectorSwitchOnT)) // 120
+		{
+			solarPumpOff();
+
+			Serial.println(F("EMOF is active. Waiting for collector to cool down to EmergencyCollectorSwitchOnT"));
+			return false;
+		}
+	}
+
+	if (state_clear_error_bit(ERR_EMOF))
+		Serial.println(F("EMOF deactivated"));
+
+	return true;
+}
+
+bool CheckBoilerTank(int TBoiler)
+{
+	if (!isValidT(TBoiler))
+	{
+		burnerOff();
+		return false;
+	}
+
+	if (TBoiler >= 950) // 95 degree is absolute max for boiler tank
+	{
+		burnerOff();
+		solarPumpOff();
+
+		if (state_set_error_bit(ERR_95_DEGREE))
+			Serial.println(F("95 degree in tank activated"));
+		return false;
+	}
+
+	if (state_clear_error_bit(ERR_95_DEGREE))
+	{
+		Serial.println(F("95 degree in tank deactivated"));
+	}
+
+	return true;
 }
 
 int lastGoodSolarPanelTemperature = T_UNDEFINED;
@@ -361,7 +395,7 @@ int readSolarPaneT()
 	}
 	else
 	{
-		lastGoodSolarPanelTemperature = round(temperature) * 10;
+		lastGoodSolarPanelTemperature = round(temperature) * 10; // 1 degree precision is enough
 		solarPanelTemperatureErrorCount = 0;
 		return lastGoodSolarPanelTemperature;
 	}

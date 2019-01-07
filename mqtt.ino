@@ -288,7 +288,7 @@ void callback(char* topic, byte * payload, unsigned int len) {
 
 		addRoomT(id, value);
 
-		ProcessRoomSensor(id);
+		ProcessRoomSensor(id, true);
 		return;
 	}
 
