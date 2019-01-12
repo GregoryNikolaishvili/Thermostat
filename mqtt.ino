@@ -64,6 +64,13 @@ void PublishMqtt(const char* topic, const char* message, int len, boolean retain
 	mqttClient.publish(topic, (byte*)message, len, retained);
 }
 
+void PublishMqttAlive(const char* topic)
+{
+	setHexInt32(buffer, now(), 0);
+	PublishMqtt(topic, buffer, 8, false);
+}
+
+
 void ReconnectMqtt() {
 
 	if (!mqttClient.connected()) {
@@ -88,7 +95,7 @@ void ReconnectMqtt() {
 			PublishBoilerSettings();
 			PublishRoomSensorSettings();
 			PublishRoomSensorNamesAndOrder();
-			PublishAllStates(false, true);
+			PublishAllStates(false);
 		}
 		else {
 			Serial.print(F("failed, rc="));
@@ -106,18 +113,18 @@ void PublishControllerState()
 }
 
 
-void PublishAllStates(bool isRefresh, bool isInitialState) {
+void PublishAllStates(bool isInitialState) {
 	if (!mqttClient.connected()) return;
 
 	if (!isInitialState)
 		for (byte id = 0; id < BOILER_SENSOR_COUNT; id++)
-			PublishBoilerSensorT(id, isRefresh);
+			PublishBoilerSensorT(id);
 
 	for (byte id = 0; id < HEATER_RELAY_COUNT; id++)
-		PublishHeaterRelayState(id, isHeaterRelayOn(id), isRefresh);
+		PublishHeaterRelayState(id, heaterRelayGetValue(id));
 
 	for (byte id = 0; id < BOILER_RELAY_COUNT; id++)
-		PublishBoilerRelayState(id, _isBoilerRelayOn(id), isRefresh);
+		PublishBoilerRelayState(id, _isBoilerRelayOn(id));
 }
 
 //void PublishRoomSensorT(byte idx)
@@ -136,37 +143,34 @@ void PublishAllStates(bool isRefresh, bool isInitialState) {
 //	PublishMqtt(topic, buffer, 8, false);
 //}
 
-void PublishHeaterRelayState(byte id, bool value, bool isRefresh)
+void PublishHeaterRelayState(byte id, byte value)
 {
 	if (!mqttClient.connected()) return;
 
 	char topic[12];
 	strcpy(topic, "cha/ts/hr/?");
-	topic[7] = isRefresh ? 'H' : 'h';
 	topic[10] = byteToHexChar(id);
-	PublishMqtt(topic, value ? "1" : "0", 1, !isRefresh);
+	setHexByte(buffer, value, 0);
+	PublishMqtt(topic, buffer, 2, true);
 }
 
-void PublishBoilerRelayState(byte id, bool value, bool isRefresh)
+void PublishBoilerRelayState(byte id, bool value)
 {
 	if (!mqttClient.connected()) return;
 
 	char topic[12];
 	strcpy(topic, "cha/ts/br/?");
-	topic[7] = isRefresh ? 'B' : 'b';
 	topic[10] = byteToHexChar(id);
-
 	bool b = !value && (id == BL_CIRC_PUMP) && circPumpStarting();
-	PublishMqtt(topic, value ? "1" : (b ? "2" : "0"), 1, !isRefresh);
+	PublishMqtt(topic, value ? "1" : (b ? "2" : "0"), 1, true);
 }
 
-void PublishBoilerSensorT(byte id, bool isRefresh)
+void PublishBoilerSensorT(byte id)
 {
 	if (!mqttClient.connected()) return;
 
 	char topic[12];
 	strcpy(topic, "cha/ts/bs/?");
-	topic[7] = isRefresh ? 'B' : 'b';
 	topic[10] = byteToHexChar(id);
 
 	Temperature* bsv = boilerSensorsValues[id];
@@ -174,7 +178,7 @@ void PublishBoilerSensorT(byte id, bool isRefresh)
 	buffer[4] = bsv->getTrend();
 	//setHexInt16(buffer, now() - bsv->getLastReadingTime(), 5);
 
-	PublishMqtt(topic, buffer, 5, !isRefresh);
+	PublishMqtt(topic, buffer, 5, true);
 }
 
 
@@ -296,7 +300,8 @@ void callback(char* topic, byte * payload, unsigned int len) {
 
 	if (strcmp(topic, "chac/ts/refresh") == 0)
 	{
-		PublishAllStates(true, false);
+		PublishAllStates(false);
+		PublishMqttAlive("cha/ts/alive");
 
 		/*for (byte idx = 0; idx < roomSensorCount; idx++)
 			PublishRoomSensorT(idx);*/

@@ -77,7 +77,7 @@ RoomSensorSettingStructure* getRoomSensorSettings(int id)
 
 void ProcessRoomSensors()
 {
-	if (boilerSettings.Mode != BOILER_MODE_WINTER)
+	if (boilerSettings.Mode != BOILER_MODE_WINTER && boilerSettings.Mode != BOILER_MODE_WINTER_AWAY)
 		return;
 	if (isBoilerTankOverheated)
 		return;
@@ -94,7 +94,7 @@ void ProcessRoomSensors()
 
 void ProcessRoomSensor(int id, bool checkCirculatingPump)
 {
-	if (boilerSettings.Mode != BOILER_MODE_WINTER)
+	if (boilerSettings.Mode != BOILER_MODE_WINTER && boilerSettings.Mode != BOILER_MODE_WINTER_AWAY)
 		return;
 	if (isBoilerTankOverheated)
 		return;
@@ -106,18 +106,14 @@ void ProcessRoomSensor(int id, bool checkCirculatingPump)
 
 		if ((rss != NULL) && (rss->relayId > 0))
 		{
-			int delta = T - rss->targetT;
-			bool relayIsOn = isHeaterRelayOn(rss->relayId);
+			int deltaT = (rss->targetT - T) * 20; // DIRECT. 0.5 degree = 5 in delta. So multiply it by 20 to get 0 - 100 range
+			// PID Heater
+			if (deltaT < 0)
+				deltaT = 0;
+			else if (deltaT > 100)
+				deltaT = 100;
 
-			if (relayIsOn && (delta >= 2)) // 0.2 degrees
-			{
-				heaterRelayOff(rss->relayId);
-			}
-			else
-				if (!relayIsOn && (delta <= -2)) // -0.2 degrees
-				{
-					heaterRelayOn(rss->relayId);
-				}
+			heaterRelaySetValue(rss->relayId, deltaT);
 		}
 	}
 

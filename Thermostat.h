@@ -51,6 +51,10 @@ const char BOILER_MODE_SUMMER = 'S';
 const char BOILER_MODE_SUMMER_POOL = 'P';
 const char BOILER_MODE_WINTER = 'W';
 
+const char BOILER_MODE_SUMMER_AWAY = 's';
+const char BOILER_MODE_SUMMER_POOL_AWAY = 'p';
+const char BOILER_MODE_WINTER_AWAY = 'w';
+
 const byte BL_SOLAR_PUMP = 0;
 const byte BL_CIRC_PUMP = 1;
 const byte BL_FURNACE = 2;

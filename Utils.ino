@@ -26,6 +26,12 @@ int setHexInt16(char *buffer, int x, int idx)
   return idx;
 }
 
+int setHexInt32(char *buffer, long x, int idx)
+{
+	idx = setHexInt16(buffer, x >> 16, idx);
+	idx = setHexInt16(buffer, x & 0xFFFF, idx);
+	return idx;
+}
 
 //void printHexByte(Print* client, byte x)
 //{

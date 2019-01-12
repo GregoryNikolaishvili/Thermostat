@@ -38,6 +38,7 @@ byte heaterRelayPins[HEATER_RELAY_COUNT] = {
 	PIN_HR_16
 };
 
+byte heaterRelayState[HEATER_RELAY_COUNT];
 
 byte boilerRelayPins[BOILER_RELAY_COUNT] = {
 	PIN_BL_SOLAR_PUMP,
@@ -58,8 +59,8 @@ void setup()
 	wdt_disable();
 
 	Serial.begin(115200);
-  Serial.println();
-  Serial.println(F("Initializing.. ver. 1.0.6"));
+	Serial.println();
+	Serial.println(F("Initializing.. ver. 1.0.7"));
 
 	pinMode(PIN_BLINKING_LED, OUTPUT);
 	digitalWrite(PIN_BLINKING_LED, LOW); // Turn on led at start
@@ -76,9 +77,11 @@ void setup()
 	// Init relays
 	for (byte i = 0; i < HEATER_RELAY_COUNT; i++)
 	{
-		digitalWrite(heaterRelayPins[i], LOW);
+		heaterRelayState[i] = 100;
+		digitalWrite(heaterRelayPins[i], HIGH);
 		pinMode(heaterRelayPins[i], OUTPUT);
 	}
+
 	for (byte i = 0; i < BOILER_RELAY_COUNT; i++)
 	{
 		digitalWrite(boilerRelayPins[i], HIGH);
@@ -146,7 +149,7 @@ void oncePerHalfSecond(void)
 		solarSensor.readRTD_step1();
 	if ((halfSecondTicks + 1) % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0) // 0.5 second before processing temperatures
 		solarSensor.readRTD_step2();
-	
+
 	if (halfSecondTicks % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0)
 	{
 		lastReadSolarPanelRTD = solarSensor.readRTD_step3();
@@ -159,6 +162,8 @@ void oncePerHalfSecond(void)
 
 void oncePerSecond()
 {
+	processHeaterRelays();
+
 	if ((secondTicks % 5) == 0)
 		oncePer5Second();
 
@@ -178,7 +183,7 @@ void oncePer1Minute()
 	ProcessRoomSensors();
 
 	if (secondTicks > 0) // do not publish on startup
-		PublishAllStates(true, false);
+		PublishAllStates(true);
 }
 
 //void SetErrorState(unsigned int mask)
@@ -187,44 +192,48 @@ void oncePer1Minute()
 //	PublishState();
 //}
 
-
-void heaterRelaySet(byte id, bool state)
+void heaterRelaySetValue(byte id, byte value)
 {
-	if (state)
-		heaterRelayOn(id);
-	else
-		heaterRelayOff(id);
-}
-
-void heaterRelayOn(byte id)
-{
-	if (isHeaterRelayOn(id))
-		return;
-
 	if (id < HEATER_RELAY_COUNT)
 	{
-		digitalWrite(heaterRelayPins[id], HIGH);
-		PublishHeaterRelayState(id, true, false);
+		if (heaterRelayState[id] != value)
+		{
+			heaterRelayState[id] = value;
+			PublishHeaterRelayState(id, value);
+		}
 	}
 }
 
-void heaterRelayOff(byte id)
-{
-	if (!isHeaterRelayOn(id))
-		return;
 
+byte heaterRelayGetValue(byte id)
+{
 	if (id < HEATER_RELAY_COUNT)
 	{
-		digitalWrite(heaterRelayPins[id], LOW);
-		PublishHeaterRelayState(id, false, false);
+		return heaterRelayState[id];
 	}
+	return 0;
 }
 
-bool isHeaterRelayOn(byte id)
+void processHeaterRelays()
 {
-	if (id < HEATER_RELAY_COUNT)
-		return digitalRead(heaterRelayPins[id]);
-	return false;
+	static unsigned long windowStartTime = 0;
+
+	if (secondTicks - windowStartTime > 100) // time to shift the Relay Window
+		windowStartTime += 100;
+
+	for (byte id = 0; id < HEATER_RELAY_COUNT; id++)
+	{
+		int output = heaterRelayState[id];
+
+		if (output < (int)(secondTicks - windowStartTime))
+		{
+			digitalWrite(heaterRelayPins[id], LOW);
+		}
+		else
+		{
+			digitalWrite(heaterRelayPins[id], HIGH);
+		}
+	}
 }
 
 
@@ -258,12 +267,11 @@ void circPumpPumpOn()
 	if (circPumpStarting() || _isBoilerRelayOn(BL_CIRC_PUMP))
 		return;
 
-	if (boilerSettings.Mode == BOILER_MODE_WINTER) // needs 5 min delay
+	if (boilerSettings.Mode == BOILER_MODE_WINTER || boilerSettings.Mode == BOILER_MODE_WINTER_AWAY) // needs 5 min delay
 	{
 		circPumpStartingAlarm = Alarm.alarmOnce(elapsedSecsToday(now()) + CIRCULATING_PUMP_ON_DELAY_MINUTES * 60, circPumpOnTimer, "", 0);
-		//showNextEvent();
 
-		PublishBoilerRelayState(BL_CIRC_PUMP, false, false); // will publish standby mode
+		PublishBoilerRelayState(BL_CIRC_PUMP, false); // will publish standby mode
 	}
 	else
 		_boilerRelayOn(BL_CIRC_PUMP);
@@ -285,7 +293,7 @@ void circPumpPumpOff()
 	{
 		Alarm.free(circPumpStartingAlarm);
 		circPumpStartingAlarm = 0xFF;
-		PublishBoilerRelayState(BL_CIRC_PUMP, false, false);
+		PublishBoilerRelayState(BL_CIRC_PUMP, false);
 	}
 	else
 		_boilerRelayOff(BL_CIRC_PUMP);
@@ -319,7 +327,7 @@ void _boilerRelayOn(byte id)
 	if (id < BOILER_RELAY_COUNT)
 	{
 		digitalWrite(boilerRelayPins[id], LOW);
-		PublishBoilerRelayState(id, true, false);
+		PublishBoilerRelayState(id, true);
 	}
 }
 
@@ -331,7 +339,7 @@ void _boilerRelayOff(byte id)
 	if (id < BOILER_RELAY_COUNT)
 	{
 		digitalWrite(boilerRelayPins[id], HIGH);
-		PublishBoilerRelayState(id, false, false);
+		PublishBoilerRelayState(id, false);
 	}
 }
 

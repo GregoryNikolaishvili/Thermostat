@@ -31,10 +31,10 @@ void InitTemperatureSensors()
 
 void ReInitBoiler()
 {
-	if (boilerSettings.Mode != BOILER_MODE_WINTER)
+	if (boilerSettings.Mode != BOILER_MODE_WINTER && boilerSettings.Mode != BOILER_MODE_WINTER_AWAY)
 	{
 		for (byte id = 0; id < HEATER_RELAY_COUNT; id++)
-			heaterRelayOff(id);
+			heaterRelaySetValue(id, 100); // 100% open
 		circPumpPumpOff();
 		burnerOff();
 		return;
@@ -53,7 +53,7 @@ void setBoilerT(byte id, int value)
 	int old = boilerSensorsValues[id]->getValue();
 	boilerSensorsValues[id]->addValue(value);
 	if (old != boilerSensorsValues[id]->getValue())
-		PublishBoilerSensorT(id, false);
+		PublishBoilerSensorT(id);
 }
 
 void CheckCirculatingPump()
@@ -62,7 +62,7 @@ void CheckCirculatingPump()
 
 	for (byte id = 0; id < HEATER_RELAY_COUNT; id++)
 	{
-		if (isHeaterRelayOn(id))
+		if (heaterRelayGetValue(id) > 0)
 		{
 			allHeaterRelaysAreOff = false;
 			break;
@@ -87,7 +87,7 @@ void Temperature::clear()
 	lastValue = T_UNDEFINED;
 	idx = 0;
 	cnt = 0;
-	lastReadingTime = 0;
+	//lastReadingTime = 0;
 	for (byte i = 0; i < LINEAR_REGRESSION_POINT_COUNT; i++)
 	{
 		oldValues[i] = 0;
@@ -105,7 +105,7 @@ void Temperature::addValue(const int value)
 	if (cnt < LINEAR_REGRESSION_POINT_COUNT)
 		cnt++;
 
-	lastReadingTime = now();
+	//lastReadingTime = now();
 }
 
 int Temperature::getValue()
@@ -113,10 +113,10 @@ int Temperature::getValue()
 	return lastValue;
 }
 
-time_t Temperature::getLastReadingTime()
-{
-	return lastReadingTime;
-}
+//time_t Temperature::getLastReadingTime()
+//{
+//	return lastReadingTime;
+//}
 
 char Temperature::getTrend()
 {
@@ -271,7 +271,7 @@ void ProcessTemperatureSensors()
 
 	if (!isBoilerTankOverheated && isValidT(T3)) // T3 = Tank top
 	{
-		if (boilerSettings.Mode == BOILER_MODE_SUMMER_POOL)
+		if (boilerSettings.Mode == BOILER_MODE_SUMMER_POOL || boilerSettings.Mode == BOILER_MODE_SUMMER_POOL_AWAY)
 		{
 			if (T3 >= boilerSettings.PoolSwitchOnT)
 				circPumpPumpOn();
@@ -355,11 +355,9 @@ bool CheckBoilerTank(int TBoiler)
 		burnerOff();
 
 		// Try to cool down boiler with all means
-		if (boilerSettings.Mode == BOILER_MODE_WINTER)
-		{
-			for (byte id = 0; id < HEATER_RELAY_COUNT; id++)
-				heaterRelayOn(id);
-		}
+
+		for (byte id = 0; id < HEATER_RELAY_COUNT; id++)
+			heaterRelaySetValue(id, 100); // 100% open
 		circPumpPumpOn(); // Turn on recirculating pump
 
 		if (state_set_error_bit(ERR_95_DEGREE))
