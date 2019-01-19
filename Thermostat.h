@@ -148,11 +148,14 @@ const byte LINEAR_REGRESSION_POINT_COUNT = 5;
 class Temperature
 {
 private:
-	byte cnt;
-	byte idx;
+	//byte cnt;
+	//byte idx;
 	int lastValue;
-	int oldValues[LINEAR_REGRESSION_POINT_COUNT];
-	//time_t lastReadingTime;
+	int lastTrendValue;
+	long lastTrendValueSecondTicks;
+	char trend;
+	//int oldValues[LINEAR_REGRESSION_POINT_COUNT];
+	time_t lastReadingTime;
 public:
 	Temperature();
 	void clear();
@@ -160,5 +163,5 @@ public:
 	int getValue();
 	void addValue(const int value);
 	char getTrend();
-	//time_t getLastReadingTime();
+	time_t getLastReadingTime();
 };
