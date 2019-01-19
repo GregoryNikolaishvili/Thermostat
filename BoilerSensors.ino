@@ -10,10 +10,6 @@ bool isBoilerTankOverheated = false;
 int lastGoodSolarPanelTemperature = T_UNDEFINED;
 int solarPanelTemperatureErrorCount = 0;
 
-//todo 
-extern byte roomSensorCount;
-extern int roomSensorsIds[MAX_ROOM_SENSORS];
-
 void InitTemperatureSensors()
 {
   for (int i = 0; i < BOILER_SENSOR_COUNT; i++)
@@ -61,24 +57,7 @@ void setBoilerT(byte id, int value)
 
 void CheckCirculatingPump()
 {
-  bool allHeaterRelaysAreOff = true;
-
-  // Iterate through relays, which are linked to room thermometer
-  for (byte i = 0; i < roomSensorCount; i++)
-  {
-    int id = roomSensorsIds[i];
-    RoomSensorSettingStructure* rss = getRoomSensorSettings(id);
-
-    if ((rss != NULL) && (rss->relayId > 0))
-    {
-      if (heaterRelayGetValue(rss->relayId) > 0)
-      {
-        allHeaterRelaysAreOff = false;
-        break;
-      }
-    }
-  }
-  if (allHeaterRelaysAreOff)
+  if (checkAllHeaterRelaysAreOff())
     circPumpPumpOff();
   else
     circPumpPumpOn();

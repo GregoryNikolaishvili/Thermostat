@@ -152,7 +152,7 @@ private:
 	byte idx;
 	int lastValue;
 	int oldValues[LINEAR_REGRESSION_POINT_COUNT];
-	time_t lastReadingTime;
+	//time_t lastReadingTime;
 public:
 	Temperature();
 	void clear();
@@ -160,5 +160,5 @@ public:
 	int getValue();
 	void addValue(const int value);
 	char getTrend();
-	time_t getLastReadingTime();
+	//time_t getLastReadingTime();
 };

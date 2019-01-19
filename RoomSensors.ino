@@ -120,3 +120,26 @@ void ProcessRoomSensor(int id, bool checkCirculatingPump)
 	if (checkCirculatingPump)
 		CheckCirculatingPump();
 }
+
+bool checkAllHeaterRelaysAreOff()
+{
+	bool allHeaterRelaysAreOff = true;
+
+	// Iterate through relays, which are linked to room thermometer
+	for (byte i = 0; i < roomSensorCount; i++)
+	{
+		int id = roomSensorsIds[i];
+		RoomSensorSettingStructure* rss = getRoomSensorSettings(id);
+
+		if ((rss != NULL) && (rss->relayId > 0))
+		{
+			if (heaterRelayGetValue(rss->relayId) > 0)
+			{
+				allHeaterRelaysAreOff = false;
+				break;
+			}
+		}
+	}
+
+	return allHeaterRelaysAreOff;
+}
