@@ -1,7 +1,7 @@
 int sunriseMin;
 int sunsetMin;
 
-const byte DEF_SETTINGS_VERSION_BOILER = 0x0C;
+const byte DEF_SETTINGS_VERSION_BOILER = 0x0D;
 const byte DEF_SETTINGS_VERSION_ROOM_SENSORS = 0x0B;
 
 const char OFF_SUNRISE = 'S';

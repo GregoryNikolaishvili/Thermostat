@@ -263,7 +263,7 @@ void ProcessTemperatureSensors()
 
 	bool isSolarOk = CheckSolarPanels(TSolar);
 
-	isBoilerTankOverheated = CheckBoilerTank(TBoiler);
+	CheckBoilerTank(TBoiler);
 
 	if (isSolarOk && isValidT(TSolar) && isValidT(T2) && TSolar > boilerSettings.CollectorMinimumSwitchOnT) // T2 = Tank bottom
 	{
@@ -297,24 +297,16 @@ bool CheckSolarPanels(int TSolar)
 	if (isValidT(TSolar))
 	{
 		// Is solar collector too hot?
-		if (TSolar >= boilerSettings.CollectorEmergencySwitchOffT) // 140
+		if (TSolar >= boilerSettings.CollectorEmergencySwitchOffT || // 140
+			(state_is_error_bit_set(ERR_EMOF) && TSolar >= boilerSettings.CollectorEmergencySwitchOnT)) // 120 
 		{
 			solarPumpOff();
 			if (state_set_error_bit(ERR_EMOF))
 				Serial.println(F("EMOF activated"));
 			return false;
 		}
-
-		// If ERR_EMOF was already set (maybe earlier)
-		if (state_is_error_bit_set(ERR_EMOF))
+		else
 		{
-			if (TSolar >= boilerSettings.CollectorEmergencySwitchOnT) // 120
-			{
-				solarPumpOff();
-				Serial.println(F("EMOF is active. Waiting for collector to cool down to EmergencyCollectorSwitchOnT"));
-				return false;
-			}
-
 			if (state_clear_error_bit(ERR_EMOF))
 				Serial.println(F("EMOF deactivated"));
 		}
@@ -335,17 +327,17 @@ bool CheckSolarPanels(int TSolar)
 	return true;
 }
 
-bool CheckBoilerTank(int TBoiler)
+void CheckBoilerTank(int TBoiler)
 {
 	if (!isValidT(TBoiler))
 	{
 		burnerOff();
-
-		return false;
+		return;
 	}
 
 	bool turnBurnerOn = true;
-	if (TBoiler >= boilerSettings.MaxTankT) // SMX, 60
+	if (TBoiler >= boilerSettings.MaxTankT || 
+		(state_is_error_bit_set(ERR_SMX) && TBoiler >= boilerSettings.MaxTankT - 50)) // SMX, 60
 	{
 		turnBurnerOn = false;
 		burnerOff();
@@ -359,13 +351,14 @@ bool CheckBoilerTank(int TBoiler)
 			Serial.println(F("SMX deactivated"));
 	}
 
-	if (TBoiler >= boilerSettings.AbsoluteMaxTankT) // 95 degree is absolute max for boiler tank
+	if (TBoiler >= boilerSettings.AbsoluteMaxTankT 
+		|| (state_is_error_bit_set(ERR_95_DEGREE) && TBoiler >= boilerSettings.AbsoluteMaxTankT - 50)) // 95 degree is absolute max for boiler tank
 	{
+		isBoilerTankOverheated = true;
 		turnBurnerOn = false;
 		burnerOff();
 
 		// Try to cool down boiler with all means
-
 		for (byte id = 0; id < HEATER_RELAY_COUNT; id++)
 			heaterRelaySetValue(id, 100); // 100% open
 		circPumpPumpOn(); // Turn on recirculating pump
@@ -373,16 +366,15 @@ bool CheckBoilerTank(int TBoiler)
 		if (state_set_error_bit(ERR_95_DEGREE))
 			Serial.println(F("95 degree in tank activated"));
 
-		return true;
+		return;
 	}
 
+	isBoilerTankOverheated = false;
 	if (state_clear_error_bit(ERR_95_DEGREE))
 		Serial.println(F("95 degree in tank deactivated"));
 
 	if (turnBurnerOn)
 		burnerOn();
-
-	return false;
 }
 
 int readSolarPaneT()

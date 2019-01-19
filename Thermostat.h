@@ -143,7 +143,7 @@ struct BoilerSettingStructure {
 
 
 
-const byte LINEAR_REGRESSION_POINT_COUNT = 5;
+//const byte LINEAR_REGRESSION_POINT_COUNT = 5;
 
 class Temperature
 {
