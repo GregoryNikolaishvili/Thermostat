@@ -186,12 +186,6 @@ void oncePer1Minute()
 		PublishAllStates(true);
 }
 
-//void SetErrorState(unsigned int mask)
-//{
-//	state_set_error_bit(mask);
-//	PublishState();
-//}
-
 void heaterRelaySetValue(byte id, byte value)
 {
 	if (id < HEATER_RELAY_COUNT)

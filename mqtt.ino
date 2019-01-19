@@ -268,6 +268,7 @@ void PublishRoomSensorNamesAndOrder()
 
 void callback(char* topic, byte * payload, unsigned int len) {
 
+
 	Serial.print(F("message arrived: topic='"));
 	Serial.print(topic);
 	Serial.print(F("', length="));
@@ -279,6 +280,7 @@ void callback(char* topic, byte * payload, unsigned int len) {
 	if (len == 0)
 		return;
 
+	// Data arrived from room sensors (acurite) via AcuHack 
 	if (strncmp(topic, "chac/ts/state/rs/", 17) == 0)
 	{
 		int id = readHex(topic + 17, 4);
@@ -309,11 +311,15 @@ void callback(char* topic, byte * payload, unsigned int len) {
 	}
 
 
+	// Set settings of room sensors
 	if (strcmp(topic, "chac/ts/settings/rs") == 0)
 	{
 		char* p = (char*)payload;
 		int cnt = readHex(p, 2);
 		p += 2;
+
+		Serial.print(F("New room sensor settings. Count="));
+		Serial.println(cnt);
 
 		if (cnt <= MAX_ROOM_SENSORS)
 		{
@@ -338,6 +344,8 @@ void callback(char* topic, byte * payload, unsigned int len) {
 	if (strcmp(topic, "chac/ts/settings/bl") == 0)
 	{
 		char* p = (char*)payload;
+
+		Serial.println(F("New boiler settings"));
 
 		boilerSettings.Mode = *p++;
 		boilerSettings.CollectorSwitchOnTempDiff = readHexT(p); p += 4;
@@ -374,6 +382,8 @@ void callback(char* topic, byte * payload, unsigned int len) {
 
 	if (strcmp(topic, "chac/ts/settings/rs/names") == 0)
 	{
+		Serial.println(F("New room sensor names"));
+
 		saveData(payload, len);
 
 		PublishRoomSensorNamesAndOrder();
