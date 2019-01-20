@@ -111,6 +111,8 @@ void roomSensorSettingsChanged(bool publish)
 
 void saveData(const void* data, int length)
 {
+	if (length > 256)
+		length = 256;
 	eeprom_update_word((uint16_t *)STORAGE_ADDRESS_DATA, length);
 	eeprom_update_block(data, (void*)(STORAGE_ADDRESS_DATA + 2), length);
 }
