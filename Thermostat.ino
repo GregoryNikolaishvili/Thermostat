@@ -1,5 +1,5 @@
 #define REQUIRESALARMS false // FOR DS18B20 library
-#define MQTT_MAX_PACKET_SIZE 256 // FOR PubSubClient library
+#define MQTT_MAX_PACKET_SIZE 300 // FOR PubSubClient library // 5 + 2 + strlen(topic) + plength
 #define MQTT_SOCKET_TIMEOUT 5 // FOR PubSubClient library
 
 #include "Thermostat.h"
