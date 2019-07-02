@@ -162,7 +162,7 @@ void startDS18B20TemperatureMeasurements()
 	dallasSensors.requestTemperatures();
 }
 
-// Returns temperature multiplied by 10
+// Returns temperature multiplied by 10, or T_UNDEFINED
 int getTemperatureById(int id)
 {
 	int T = T_UNDEFINED;

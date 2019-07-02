@@ -7,13 +7,11 @@ Temperature* boilerSensorsValues[BOILER_SENSOR_COUNT];
 BoilerSettingStructure boilerSettings;
 
 bool isBoilerTankOverheated = false;
-int lastGoodSolarPanelTemperature = T_UNDEFINED;
-int solarPanelTemperatureErrorCount = 0;
 
 void InitTemperatureSensors()
 {
 	for (int i = 0; i < BOILER_SENSOR_COUNT; i++)
-		boilerSensorsValues[i] = new Temperature();
+		boilerSensorsValues[i] = new Temperature(10);
 
 	initDS18b20TempSensors();
 
@@ -44,15 +42,17 @@ void ReInitBoiler()
 
 int getBoilerT(byte id)
 {
-	return boilerSensorsValues[id]->getValue();
+	return boilerSensorsValues[id]->getCurrentValue();
 }
 
-void setBoilerT(byte id, int value)
+int setBoilerT(byte id, int value)
 {
-	int old = boilerSensorsValues[id]->getValue();
-	boilerSensorsValues[id]->addValue(value);
-	if (old != boilerSensorsValues[id]->getValue())
+	Temperature* temperature = boilerSensorsValues[id];
+	int old = temperature->getCurrentValue();
+	int newValue = temperature->process(value);
+	if (old != newValue)
 		PublishBoilerSensorT(id);
+	return newValue;
 }
 
 void CheckCirculatingPump()
@@ -64,122 +64,6 @@ void CheckCirculatingPump()
 }
 
 
-Temperature::Temperature()
-{
-	clear();
-}
-
-
-void Temperature::clear()
-{
-	lastValue = T_UNDEFINED;
-	lastTrendValue = T_UNDEFINED;
-	lastTrendValueSecondTicks = 0;
-	trend = '=';
-	lastReadingTime = 0;
-
-	//idx = 0;
-	//cnt = 0;
-	//for (byte i = 0; i < LINEAR_REGRESSION_POINT_COUNT; i++)
-	//{
-	//  oldValues[i] = 0;
-	//}
-}
-
-void Temperature::addValue(const int value)
-{
-	lastValue = value;
-	int delta = lastValue - lastTrendValue;
-	if (delta <= -2) // - 0.2 degree
-	{
-		trend = '-';
-		lastTrendValue = lastValue;
-		lastTrendValueSecondTicks = secondTicks;
-	}
-	else if (delta >= -2) // + 0.2 degree
-	{
-		trend = '+';
-		lastTrendValue = lastValue;
-		lastTrendValueSecondTicks = secondTicks;
-	}
-	else if (secondTicks - lastTrendValueSecondTicks > 300) // 5 min same temperature
-	{
-		trend = '=';
-	}
-
-	//oldValues[idx++] = value;
-	//if (idx >= LINEAR_REGRESSION_POINT_COUNT)
-	//  idx = 0;  // faster than %
-
-	// update count as last otherwise if( _cnt == 0) above will fail
-	//if (cnt < LINEAR_REGRESSION_POINT_COUNT)
-	//  cnt++;
-
-	lastReadingTime = now();
-}
-
-int Temperature::getValue()
-{
-	return lastValue;
-}
-
-time_t Temperature::getLastReadingTime()
-{
-	return lastReadingTime;
-}
-
-char Temperature::getTrend()
-{
-	return trend;
-}
-
-//if (cnt < 2)
-//	return '=';
-
-//// initialize variables
-//float xbar = 0;
-//float ybar = 0;
-//float xybar = 0;
-//float xsqbar = 0;
-
-//// calculations required for linear regression
-//for (byte j = 0; j < LINEAR_REGRESSION_POINT_COUNT; j++) {
-//	byte i = (j + idx) % LINEAR_REGRESSION_POINT_COUNT;
-
-//	//Serial.print("J = "); Serial.print(j);
-//	//Serial.print(", I = "); Serial.print(i);
-//	//Serial.print(", V = "); Serial.println(oldValues[i]);
-
-//	xbar = xbar + j;
-//	ybar = ybar + oldValues[i];
-//	xybar = xybar + j * oldValues[i];
-//	xsqbar = xsqbar + j * j;
-//}
-
-//xbar = xbar / LINEAR_REGRESSION_POINT_COUNT;
-//ybar = ybar / LINEAR_REGRESSION_POINT_COUNT;
-//xybar = xybar / LINEAR_REGRESSION_POINT_COUNT;
-//xsqbar = xsqbar / LINEAR_REGRESSION_POINT_COUNT;
-
-//// simple linear regression algorithm
-//float slope = (xybar - xbar * ybar) / (xsqbar - xbar * xbar);
-////float intercept = ybar - slope * xbar;
-
-////Serial.print("xbar = "); Serial.println(xbar);
-////Serial.print("ybar = "); Serial.println(ybar);
-////Serial.print("xybar = "); Serial.println(xybar);
-////Serial.print("xsqbar = "); Serial.println(xsqbar);
-
-////Serial.print("slope = "); Serial.println(slope);
-////Serial.print("intercept = "); Serial.println(intercept);
-
-//if (slope < 0)
-//	return '-';
-//else if (slope > 0)
-//	return '+';
-//else
-//	return '=';
-//}
 
 // boiler & solar
 void ProcessTemperatureSensors()
@@ -195,10 +79,10 @@ void ProcessTemperatureSensors()
 	Serial.print("T3 = "); Serial.println(T3);
 	Serial.print("T_furnace = "); Serial.println(TF);
 
-	setBoilerT(T_SOLAR_PANEL_T, TSolar);
-	setBoilerT(T_TANK_BOTTOM, T2);
-	setBoilerT(T_TANK_TOP, T3);
-	setBoilerT(T_FURNACE, TF);
+	TSolar = setBoilerT(T_SOLAR_PANEL_T, TSolar);
+	T2 = setBoilerT(T_TANK_BOTTOM, T2);
+	T3 = setBoilerT(T_TANK_TOP, T3);
+	TF = setBoilerT(T_FURNACE, TF);
 
 	// Read sensor data
 	if (!isValidT(TSolar))
@@ -336,7 +220,7 @@ void CheckBoilerTank(int TBoiler)
 	}
 
 	bool turnBurnerOn = true;
-	if (TBoiler >= boilerSettings.MaxTankT || 
+	if (TBoiler >= boilerSettings.MaxTankT ||
 		(state_is_error_bit_set(ERR_SMX) && TBoiler >= boilerSettings.MaxTankT - 50)) // SMX, 60
 	{
 		turnBurnerOn = false;
@@ -351,7 +235,7 @@ void CheckBoilerTank(int TBoiler)
 			Serial.println(F("SMX deactivated"));
 	}
 
-	if (TBoiler >= boilerSettings.AbsoluteMaxTankT 
+	if (TBoiler >= boilerSettings.AbsoluteMaxTankT
 		|| (state_is_error_bit_set(ERR_95_DEGREE) && TBoiler >= boilerSettings.AbsoluteMaxTankT - 50)) // 95 degree is absolute max for boiler tank
 	{
 		isBoilerTankOverheated = true;
@@ -377,8 +261,10 @@ void CheckBoilerTank(int TBoiler)
 		burnerOn();
 }
 
+// Returns temperature multiplied by 10, or T_UNDEFINED
 int readSolarPaneT()
 {
+	int T;
 	float temperature = solarSensor.temperature(lastReadSolarPanelRTD, 1000.0, RREF);
 
 	//Serial.print("RTD value: "); Serial.println(lastReadSolarPanelRTD);
@@ -409,16 +295,12 @@ int readSolarPaneT()
 		}
 		solarSensor.clearFault();
 
-		solarPanelTemperatureErrorCount++;
-		if (solarPanelTemperatureErrorCount <= 5)
-			return lastGoodSolarPanelTemperature;
-
-		return T_UNDEFINED;
+		T = T_UNDEFINED;
 	}
 	else
 	{
-		lastGoodSolarPanelTemperature = round(temperature) * 10; // 1 degree precision is enough
-		solarPanelTemperatureErrorCount = 0;
-		return lastGoodSolarPanelTemperature;
+		T = round(temperature) * 10; // 1 degree precision is enough
 	}
+
+	return T;
 }

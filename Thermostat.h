@@ -1,4 +1,5 @@
 #include <arduino.h>
+#include <Temperature.h>
 #include <Time.h>					// http://www.pjrc.com/teensy/td_libs_Time.html
 
 
@@ -40,7 +41,7 @@ const byte BOILER_RELAY_COUNT = 4;
 const byte BOILER_SENSOR_COUNT = 4;
 
 const byte MAX_ROOM_SENSORS = 30;
-const int T_UNDEFINED = 9999;
+//const int T_UNDEFINED = 9999;
 
 inline boolean isValidT(int T) { return T != T_UNDEFINED; }
 
@@ -139,29 +140,4 @@ struct BoilerSettingStructure {
 	int BackupHeatingTS3_End;
 	int BackupHeatingTS3_SwitchOnT;
 	int BackupHeatingTS3_SwitchOffT;
-};
-
-
-
-//const byte LINEAR_REGRESSION_POINT_COUNT = 5;
-
-class Temperature
-{
-private:
-	//byte cnt;
-	//byte idx;
-	int lastValue;
-	int lastTrendValue;
-	long lastTrendValueSecondTicks;
-	char trend;
-	//int oldValues[LINEAR_REGRESSION_POINT_COUNT];
-	time_t lastReadingTime;
-public:
-	Temperature();
-	void clear();
-
-	int getValue();
-	void addValue(const int value);
-	char getTrend();
-	time_t getLastReadingTime();
 };

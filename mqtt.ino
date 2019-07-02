@@ -174,7 +174,7 @@ void PublishBoilerSensorT(byte id)
 	topic[10] = byteToHexChar(id);
 
 	Temperature* bsv = boilerSensorsValues[id];
-	setHexT(buffer, bsv->getValue(), 0);
+	setHexT(buffer, bsv->getCurrentValue(), 0);
 	buffer[4] = bsv->getTrend();
 	//setHexInt16(buffer, now() - bsv->getLastReadingTime(), 5);
 

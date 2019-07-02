@@ -15,13 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="mqtt.ino" />
-    <None Include="Utils.ino" />
     <None Include="Thermostat.ino" />
-    <None Include="Settings.ino" />
     <None Include="BoilerSensors.ino" />
-    <None Include="RoomSensors.ino" />
     <None Include="DS18B20.ino" />
+    <None Include="mqtt.ino" />
+    <None Include="RoomSensors.ino" />
+    <None Include="Settings.ino" />
+    <None Include="Utils.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.Thermostat.vsarduino.h">

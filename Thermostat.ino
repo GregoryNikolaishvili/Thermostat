@@ -14,6 +14,8 @@
 #include <Adafruit_MAX31865.h>		// https://github.com/adafruit/Adafruit_MAX31865
 #include <OneWire.h>				// https://github.com/PaulStoffregen/OneWire
 #include <DallasTemperature.h>	    // https://github.com/milesburton/Arduino-Temperature-Control-Library
+#include <MovingAverageFilter.h>
+#include <Temperature.h>
 #include <avr/wdt.h>
 
 byte heaterRelayPins[HEATER_RELAY_COUNT] = {
@@ -100,6 +102,12 @@ void setup()
 	readSettings();
 
 	InitEthernet();
+
+	wdt_enable(WDTO_8S);
+
+	ProcessTemperatureSensors();
+
+	wdt_disable();
 
 	delay(2000);
 
