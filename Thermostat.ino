@@ -62,7 +62,7 @@ void setup()
 
 	Serial.begin(115200);
 	Serial.println();
-	Serial.println(F("Initializing.. ver. 1.1.0"));
+	Serial.println(F("Initializing.. ver. 1.2.0"));
 
 	pinMode(PIN_BLINKING_LED, OUTPUT);
 	digitalWrite(PIN_BLINKING_LED, LOW); // Turn on led at start
@@ -104,6 +104,18 @@ void setup()
 	InitEthernet();
 
 	wdt_enable(WDTO_8S);
+
+	startDS18B20TemperatureMeasurements();
+	delay(1000);
+	wdt_reset();
+
+	solarSensor.readRTD_step1();
+	delay(500);
+	wdt_reset();
+
+	solarSensor.readRTD_step2();
+	delay(500);
+	wdt_reset();
 
 	ProcessTemperatureSensors();
 
