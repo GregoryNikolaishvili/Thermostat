@@ -167,12 +167,16 @@ int getTemperatureById(int id)
 {
 	int T = T_UNDEFINED;
 	if (tempSensors[id].oneWireId < 0xFF)
-		T = round(dallasSensors.getTempC(tempSensors[id].address)) * 10;
+	{
+		float Tx = dallasSensors.getTempC(tempSensors[id].address);
+		T = round(Tx) * 10; // 1 degree precicion is enough
+	}
 	return T;
 }
 
 int getTemperatureByOneWireId(int id)
 {
-	int T = round(dallasSensors.getTempCByIndex(id)) * 10;
+	float Tx = dallasSensors.getTempCByIndex(id);
+	int T = round(Tx) * 10;  // 1 degree precicion is enough
 	return T;
 }
