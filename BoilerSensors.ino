@@ -8,6 +8,13 @@ BoilerSettingStructure boilerSettings;
 
 bool isBoilerTankOverheated = false;
 
+// Warning conditions
+bool warning_EMOF_IsActivated = false;
+bool warning_CFR_IsActivated = false;
+bool warning_SMX_IsActivated = false;
+bool warning_MAXT_IsActivated = false;
+
+
 void InitTemperatureSensors()
 {
 	for (int i = 0; i < BOILER_SENSOR_COUNT; i++)
@@ -87,57 +94,58 @@ void ProcessTemperatureSensors()
 	// Read sensor data
 	if (!isValidT(TSolar))
 	{
-		if (state_set_error_bit(ERR_T1))
-		{
-			solarPumpOn();
-			Serial.println(F("Solar sensor fail (T1)"));
-		}
+		solarPumpOn();
+		//if (state_set_error_bit(ERR_T1))
+		//{
+		//	solarPumpOn();
+		//	Serial.println(F("Solar sensor fail (T1)"));
+		//}
 	}
-	else
-	{
-		if (state_clear_error_bit(ERR_T1))
-			Serial.println(F("Solar sensor restored (T1)"));
-	}
+	//else
+	//{
+	//	if (state_clear_error_bit(ERR_T1))
+	//		Serial.println(F("Solar sensor restored (T1)"));
+	//}
 
 	if (!isValidT(T3))
 	{
-		if (state_set_error_bit(ERR_T3))
-			Serial.println(F("Boiler sensor fail (T3)"));
+		//if (state_set_error_bit(ERR_T3))
+		//	Serial.println(F("Boiler sensor fail (T3)"));
 		T3 = T2;
 	}
-	else
-	{
-		if (state_clear_error_bit(ERR_T3))
-			Serial.println(F("Boiler sensor restored (T3)"));
-	}
+	//else
+	//{
+	//	if (state_clear_error_bit(ERR_T3))
+	//		Serial.println(F("Boiler sensor restored (T3)"));
+	//}
 
 	if (!isValidT(T2))
 	{
-		if (state_set_error_bit(ERR_T2))
-			Serial.println(F("Boiler sensor fail (T2)"));
-
+		//if (state_set_error_bit(ERR_T2))
+		//	Serial.println(F("Boiler sensor fail (T2)"));
 		if (isValidT(T3))
 			T2 = T3;
 	}
-	else
-	{
-		if (state_clear_error_bit(ERR_T2))
-			Serial.println(F("Boiler sensor restored (T2)"));
-	}
+	//else
+	//{
+	//	if (state_clear_error_bit(ERR_T2))
+	//		Serial.println(F("Boiler sensor restored (T2)"));
+	//}
 
 	if (!isValidT(TF))
 	{
-		if (state_set_error_bit(ERR_TF))
-		{
-			burnerOff();
-			Serial.println(F("Furnace sensor fail (TF)"));
-		}
+		burnerOff();
+		//if (state_set_error_bit(ERR_TF))
+		//{
+		//	burnerOff();
+		//	Serial.println(F("Furnace sensor fail (TF)"));
+		//}
 	}
-	else
-	{
-		if (state_clear_error_bit(ERR_TF))
-			Serial.println(F("Furnace sensor restored (TF)"));
-	}
+	//else
+	//{
+	//	if (state_clear_error_bit(ERR_TF))
+	//		Serial.println(F("Furnace sensor restored (TF)"));
+	//}
 
 	int TBoiler = T3;
 	if (T2 > T3)
@@ -178,35 +186,56 @@ void ProcessTemperatureSensors()
 
 bool CheckSolarPanels(int TSolar)
 {
+	bool publish = false;
+
 	if (isValidT(TSolar))
 	{
 		// Is solar collector too hot?
 		if (TSolar >= boilerSettings.CollectorEmergencySwitchOffT || // 140
-			(state_is_error_bit_set(ERR_EMOF) && TSolar >= boilerSettings.CollectorEmergencySwitchOnT)) // 120 
+			(warning_EMOF_IsActivated && TSolar >= boilerSettings.CollectorEmergencySwitchOnT)) // 120 
 		{
 			solarPumpOff();
-			if (state_set_error_bit(ERR_EMOF))
+			if (!warning_EMOF_IsActivated)
+			{
+				warning_EMOF_IsActivated = true;
+				publish = true;
 				Serial.println(F("EMOF activated"));
+			}
 			return false;
 		}
 		else
 		{
-			if (state_clear_error_bit(ERR_EMOF))
+			if (warning_EMOF_IsActivated)
+			{
+				warning_EMOF_IsActivated = false;
+				publish = true;
 				Serial.println(F("EMOF deactivated"));
+			}
 		}
 
 		// Is solar collector too cold?
 		if (TSolar <= boilerSettings.CollectorAntifreezeT) // 4
 		{
 			solarPumpOn();
-			if (state_set_error_bit(ERR_CFR))
+			if (!warning_CFR_IsActivated)
+			{
+				warning_CFR_IsActivated = true;
+				publish = true;
 				Serial.println(F("CFR activated"));
+			}
 			return false;
 		}
 
-		if (state_clear_error_bit(ERR_CFR))
+		if (warning_CFR_IsActivated)
+		{
+			warning_CFR_IsActivated = false;
+			publish = true;
 			Serial.println(F("CFR deactivated"));
+		}
 	}
+
+	if (publish)
+		PublishBoilerSettings();
 
 	return true;
 }
@@ -219,24 +248,34 @@ void CheckBoilerTank(int TBoiler)
 		return;
 	}
 
+	bool publish = false;
+
 	bool turnBurnerOn = true;
 	if (TBoiler >= boilerSettings.MaxTankT ||
-		(state_is_error_bit_set(ERR_SMX) && TBoiler >= boilerSettings.MaxTankT - 50)) // SMX, 60
+		(warning_SMX_IsActivated && TBoiler >= boilerSettings.MaxTankT - 50)) // SMX, 60
 	{
 		turnBurnerOn = false;
 		burnerOff();
 
-		if (state_set_error_bit(ERR_SMX))
+		if (!warning_SMX_IsActivated)
+		{
+			warning_SMX_IsActivated = true;
+			publish = true;
 			Serial.println(F("SMX activated"));
+		}
 	}
 	else
 	{
-		if (state_clear_error_bit(ERR_SMX))
+		if (warning_SMX_IsActivated)
+		{
+			warning_SMX_IsActivated = false;
+			publish = true;
 			Serial.println(F("SMX deactivated"));
+		}
 	}
 
 	if (TBoiler >= boilerSettings.AbsoluteMaxTankT
-		|| (state_is_error_bit_set(ERR_95_DEGREE) && TBoiler >= boilerSettings.AbsoluteMaxTankT - 50)) // 95 degree is absolute max for boiler tank
+		|| (warning_MAXT_IsActivated && TBoiler >= boilerSettings.AbsoluteMaxTankT - 50)) // 95 degree is absolute max for boiler tank
 	{
 		isBoilerTankOverheated = true;
 		turnBurnerOn = false;
@@ -247,18 +286,27 @@ void CheckBoilerTank(int TBoiler)
 			heaterRelaySetValue(id, 100); // 100% open
 		circPumpPumpOn(); // Turn on recirculating pump
 
-		if (state_set_error_bit(ERR_95_DEGREE))
+		if (!warning_MAXT_IsActivated)
+		{
+			warning_MAXT_IsActivated = true;
+			publish = true;
 			Serial.println(F("95 degree in tank activated"));
-
+		}
 		return;
 	}
 
 	isBoilerTankOverheated = false;
-	if (state_clear_error_bit(ERR_95_DEGREE))
+	if (warning_MAXT_IsActivated)
+	{
+		warning_MAXT_IsActivated = false;
+		publish = true;
 		Serial.println(F("95 degree in tank deactivated"));
-
+	}
 	if (turnBurnerOn)
 		burnerOn();
+	
+	if (publish)
+		PublishBoilerSettings();
 }
 
 // Returns temperature multiplied by 10, or T_UNDEFINED

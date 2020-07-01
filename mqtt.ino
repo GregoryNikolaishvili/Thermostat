@@ -64,11 +64,11 @@ void PublishMqtt(const char* topic, const char* message, int len, boolean retain
 	mqttClient.publish(topic, (byte*)message, len, retained);
 }
 
-void PublishMqttAlive(const char* topic)
-{
-	setHexInt32(buffer, now(), 0);
-	PublishMqtt(topic, buffer, 8, false);
-}
+//void PublishMqttAlive(const char* topic)
+//{
+//	setHexInt32(buffer, now(), 0);
+//	PublishMqtt(topic, buffer, 8, false);
+//}
 
 
 void ReconnectMqtt() {
@@ -79,22 +79,22 @@ void ReconnectMqtt() {
 		Serial.print(F("Connecting to MQTT broker..."));
 
 		// Attempt to connect
-		if (mqttClient.connect("TS controller", "cha/sys/TS controller", 1, true, "disconnected")) {
+		if (mqttClient.connect("boiler", "hub/controller/boiler", 1, true, "{\"state\":\"disconnected\"}")) {
 
 			Serial.println(F("connected"));
 
 			// Once connected, publish an announcement...
-			mqttClient.publish("cha/sys/TS controller", "connected", true);  // Publish ethernet connected status to MQTT topic
+			mqttClient.publish("hub/controller/boiler", "{\"state\":\"connected\"}", true);  // Publish ethernet connected status to MQTT topic
 
 			// ... and resubscribe
 			mqttClient.subscribe("chac/ts/#", 1);     // Subscribe to a MQTT topic, qos = 1
 
-			mqttClient.publish("cha/hub/gettime", "chac/ts/settime");     // request time
+			mqttClient.publish("hubcommand/gettime", "chac/ts/settime", false); // request time
 
-			PublishControllerState();
+			//PublishControllerState();
 			PublishBoilerSettings();
 			PublishRoomSensorSettings();
-			PublishRoomSensorNamesAndOrder();
+			//PublishRoomSensorNamesAndOrder();
 			PublishAllStates(false);
 		}
 		else {
@@ -104,13 +104,13 @@ void ReconnectMqtt() {
 	}
 }
 
-void PublishControllerState()
-{
-	if (!mqttClient.connected()) return;
-
-	setHexInt16(buffer, thermostatControllerState, 0);
-	PublishMqtt("cha/ts/state", buffer, 4, true);
-}
+//void PublishControllerState()
+//{
+//	if (!mqttClient.connected()) return;
+//
+//	setHexInt16(buffer, thermostatControllerState, 0);
+//	PublishMqtt("cha/ts/state", buffer, 4, true);
+//}
 
 
 void PublishAllStates(bool isInitialState) {
@@ -202,20 +202,22 @@ void PublishBoilerSettings()
 	idx = setHexT(buffer, boilerSettings.PoolSwitchOnT, idx);
 	idx = setHexT(buffer, boilerSettings.PoolSwitchOffT, idx);
 
-	idx = setHexInt16(buffer, boilerSettings.BackupHeatingTS1_Start, idx);
-	idx = setHexInt16(buffer, boilerSettings.BackupHeatingTS1_End, idx);
-	idx = setHexT(buffer, boilerSettings.BackupHeatingTS1_SwitchOnT, idx);
-	idx = setHexT(buffer, boilerSettings.BackupHeatingTS1_SwitchOffT, idx);
+	idx = setHexInt16(buffer, warning_EMOF_IsActivated | 2 * warning_CFR_IsActivated | 4 * warning_SMX_IsActivated | 8 * warning_SMX_IsActivated, idx);
 
-	idx = setHexInt16(buffer, boilerSettings.BackupHeatingTS2_Start, idx);
-	idx = setHexInt16(buffer, boilerSettings.BackupHeatingTS2_End, idx);
-	idx = setHexT(buffer, boilerSettings.BackupHeatingTS2_SwitchOnT, idx);
-	idx = setHexT(buffer, boilerSettings.BackupHeatingTS2_SwitchOffT, idx);
+	//idx = setHexInt16(buffer, boilerSettings.BackupHeatingTS1_Start, idx);
+	//idx = setHexInt16(buffer, boilerSettings.BackupHeatingTS1_End, idx);
+	//idx = setHexT(buffer, boilerSettings.BackupHeatingTS1_SwitchOnT, idx);
+	//idx = setHexT(buffer, boilerSettings.BackupHeatingTS1_SwitchOffT, idx);
 
-	idx = setHexInt16(buffer, boilerSettings.BackupHeatingTS3_Start, idx);
-	idx = setHexInt16(buffer, boilerSettings.BackupHeatingTS3_End, idx);
-	idx = setHexT(buffer, boilerSettings.BackupHeatingTS3_SwitchOnT, idx);
-	idx = setHexT(buffer, boilerSettings.BackupHeatingTS3_SwitchOffT, idx);
+	//idx = setHexInt16(buffer, boilerSettings.BackupHeatingTS2_Start, idx);
+	//idx = setHexInt16(buffer, boilerSettings.BackupHeatingTS2_End, idx);
+	//idx = setHexT(buffer, boilerSettings.BackupHeatingTS2_SwitchOnT, idx);
+	//idx = setHexT(buffer, boilerSettings.BackupHeatingTS2_SwitchOffT, idx);
+
+	//idx = setHexInt16(buffer, boilerSettings.BackupHeatingTS3_Start, idx);
+	//idx = setHexInt16(buffer, boilerSettings.BackupHeatingTS3_End, idx);
+	//idx = setHexT(buffer, boilerSettings.BackupHeatingTS3_SwitchOnT, idx);
+	//idx = setHexT(buffer, boilerSettings.BackupHeatingTS3_SwitchOffT, idx);
 
 	PublishMqtt(topic, buffer, idx, true);
 }
@@ -238,24 +240,24 @@ void PublishRoomSensorSettings()
 	PublishMqtt(topic, buffer, idx, true);
 }
 
-void PublishRoomSensorNamesAndOrder()
-{
-	if (!mqttClient.connected()) return;
-
-	const char* topic = "cha/ts/names/rs";
-
-	int length = eeprom_read_word((uint16_t *)STORAGE_ADDRESS_DATA);
-	//Serial.print("load name & order data. len=");
-	//Serial.println(length);
-
-	for (int i = 0; i < length; i++)
-	{
-		byte b = eeprom_read_byte((const uint8_t *)(STORAGE_ADDRESS_DATA + 2 + i));
-		buffer[i] = b;
-	}
-
-	PublishMqtt(topic, buffer, length, true);
-}
+//void PublishRoomSensorNamesAndOrder()
+//{
+//	if (!mqttClient.connected()) return;
+//
+//	const char* topic = "cha/ts/names/rs";
+//
+//	int length = eeprom_read_word((uint16_t *)STORAGE_ADDRESS_DATA);
+//	//Serial.print("load name & order data. len=");
+//	//Serial.println(length);
+//
+//	for (int i = 0; i < length; i++)
+//	{
+//		byte b = eeprom_read_byte((const uint8_t *)(STORAGE_ADDRESS_DATA + 2 + i));
+//		buffer[i] = b;
+//	}
+//
+//	PublishMqtt(topic, buffer, length, true);
+//}
 
 //void PublishAlert(char*message)
 //{
@@ -289,10 +291,10 @@ void callback(char* topic, byte * payload, unsigned int len) {
 		buffer[len] = 0;
 		int value = atoi(buffer); // T in decimal
 
-		Serial.print(F("Room sensor data: Id="));
-		Serial.print(id);
-		Serial.print(F(", T="));
-		Serial.println(value);
+		//Serial.print(F("Room sensor data: Id="));
+		//Serial.print(id);
+		//Serial.print(F(", T="));
+		//Serial.println(value);
 
 		addRoomT(id, value);
 
@@ -303,7 +305,7 @@ void callback(char* topic, byte * payload, unsigned int len) {
 	if (strcmp(topic, "chac/ts/refresh") == 0)
 	{
 		PublishAllStates(false);
-		PublishMqttAlive("cha/ts/alive");
+		//PublishMqttAlive("cha/ts/alive");
 
 		/*for (byte idx = 0; idx < roomSensorCount; idx++)
 			PublishRoomSensorT(idx);*/
@@ -380,15 +382,15 @@ void callback(char* topic, byte * payload, unsigned int len) {
 		return;
 	}
 
-	if (strcmp(topic, "chac/ts/settings/rs/names") == 0)
-	{
-		Serial.println(F("New room sensor names"));
+	//if (strcmp(topic, "chac/ts/settings/rs/names") == 0)
+	//{
+	//	Serial.println(F("New room sensor names"));
 
-		saveData(payload, len);
+	//	saveData(payload, len);
 
-		PublishRoomSensorNamesAndOrder();
-		return;
-	}
+	//	PublishRoomSensorNamesAndOrder();
+	//	return;
+	//}
 
 	if (strcmp(topic, "chac/ts/settime") == 0)
 	{

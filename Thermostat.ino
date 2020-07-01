@@ -54,7 +54,7 @@ byte boilerRelayPins[BOILER_RELAY_COUNT] = {
 unsigned long halfSecondTicks = 0;
 unsigned long secondTicks = 0;
 
-unsigned int thermostatControllerState = 0;
+//unsigned int thermostatControllerState = 0;
 
 uint16_t lastReadSolarPanelRTD;
 
@@ -64,7 +64,7 @@ void setup()
 
 	Serial.begin(115200);
 	Serial.println();
-	Serial.println(F("Initializing.. ver. 1.2.1"));
+	Serial.println(F("Initializing.. ver. 2.0.0"));
 
 	pinMode(PIN_BLINKING_LED, OUTPUT);
 	digitalWrite(PIN_BLINKING_LED, LOW); // Turn on led at start
@@ -364,27 +364,27 @@ bool _isBoilerRelayOn(byte id)
 	return false;
 }
 
-
-boolean state_set_error_bit(int mask)
-{
-	if (!state_is_error_bit_set(mask))
-	{
-		thermostatControllerState |= mask;
-		PublishControllerState();
-		return true;
-	}
-
-	return false;
-}
-
-boolean state_clear_error_bit(int mask)
-{
-	if (state_is_error_bit_set(mask))
-	{
-		thermostatControllerState &= ~mask;
-		PublishControllerState();
-		return true;
-	}
-
-	return false;
-}
+//
+//boolean state_set_error_bit(int mask)
+//{
+//	if (!state_is_error_bit_set(mask))
+//	{
+//		thermostatControllerState |= mask;
+//		PublishControllerState();
+//		return true;
+//	}
+//
+//	return false;
+//}
+//
+//boolean state_clear_error_bit(int mask)
+//{
+//	if (state_is_error_bit_set(mask))
+//	{
+//		thermostatControllerState &= ~mask;
+//		PublishControllerState();
+//		return true;
+//	}
+//
+//	return false;
+//}

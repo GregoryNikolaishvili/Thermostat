@@ -69,7 +69,7 @@ void readSettings()
 		eeprom_update_byte((uint8_t *)STORAGE_ADDRESS_ROOM_SENSOR_SETTINGS, DEF_SETTINGS_VERSION_ROOM_SENSORS);
 		saveRoomSensorSettings(false);
 
-		saveData("0000", 4);
+		//saveData("0000", 4);
 	}
 	else
 	{
@@ -109,13 +109,13 @@ void roomSensorSettingsChanged(bool publish)
 		PublishRoomSensorSettings();
 }
 
-void saveData(const void* data, int length)
-{
-	if (length > 256)
-		length = 256;
-	eeprom_update_word((uint16_t *)STORAGE_ADDRESS_DATA, length);
-	eeprom_update_block(data, (void*)(STORAGE_ADDRESS_DATA + 2), length);
-}
+//void saveData(const void* data, int length)
+//{
+//	if (length > 256)
+//		length = 256;
+//	eeprom_update_word((uint16_t *)STORAGE_ADDRESS_DATA, length);
+//	eeprom_update_block(data, (void*)(STORAGE_ADDRESS_DATA + 2), length);
+//}
 
 
 void resetAlarms(int tag, int tag2)
