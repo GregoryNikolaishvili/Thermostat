@@ -10,8 +10,6 @@ PubSubClient mqttClient("192.168.1.23", 1883, callback, ethClient);     // Initi
 
 char buffer[MQTT_BUFFER_SIZE];
 
-boolean publishInitialState = true;
-
 void InitEthernet()
 {
 	Serial.println(F("Starting ethernet.."));
@@ -74,7 +72,6 @@ void PublishMqtt(const char* topic, const char* message, int len, boolean retain
 void ReconnectMqtt() {
 
 	if (!mqttClient.connected()) {
-		publishInitialState = true;
 
 		Serial.print(F("Connecting to MQTT broker..."));
 
@@ -415,36 +412,32 @@ void callback(char* topic, byte * payload, unsigned int len) {
 
 	if (strcmp(topic, "chac/ts/settime") == 0)
 	{
-		if (publishInitialState)
-		{
-			publishInitialState = false;
 
-			char* data = (char*)payload;
-			int yr, month, day;
-			int hr, min, sec;
+		char* data = (char*)payload;
+		int yr, month, day;
+		int hr, min, sec;
 
-			yr = 2000 + (*data++ - '0') * 10;
-			yr += (*data++ - '0');
+		yr = 2000 + (*data++ - '0') * 10;
+		yr += (*data++ - '0');
 
-			month = (*data++ - '0') * 10;
-			month += (*data++ - '0');
+		month = (*data++ - '0') * 10;
+		month += (*data++ - '0');
 
-			day = (*data++ - '0') * 10;
-			day += (*data++ - '0');
+		day = (*data++ - '0') * 10;
+		day += (*data++ - '0');
 
-			data++;
+		data++;
 
-			hr = (*data++ - '0') * 10;
-			hr += (*data++ - '0');
-			min = (*data++ - '0') * 10;
-			min += (*data++ - '0');
-			sec = (*data++ - '0') * 10;
-			sec += (*data++ - '0');
+		hr = (*data++ - '0') * 10;
+		hr += (*data++ - '0');
+		min = (*data++ - '0') * 10;
+		min += (*data++ - '0');
+		sec = (*data++ - '0') * 10;
+		sec += (*data++ - '0');
 
-			setTime(hr, min, sec, day, month, yr);
-			//RTC.set(now());
-			printDateTime(&Serial, now());
-		}
+		setTime(hr, min, sec, day, month, yr);
+		//RTC.set(now());
+		printDateTime(&Serial, now());
 		return;
 	}
 
