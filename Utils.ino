@@ -12,6 +12,18 @@ int readHexT(const char* s)
 	return value - 1000;
 }
 
+int readHexInt32(const char* s)
+{
+	long value = 0;
+	int length = 8;
+	while (length > 0)
+	{
+		value = (value << 4) | hexCharToByte(*s++);
+		length--;
+	}
+	return value;
+}
+
 int setHexByte(char *buffer, byte x, int idx)
 {
   buffer[idx++] = byteToHexChar((x >> 4) & 0x0F);

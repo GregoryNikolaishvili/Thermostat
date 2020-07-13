@@ -175,12 +175,25 @@ void PublishBoilerSensorT(byte id)
 
 	Temperature* bsv = boilerSensorsValues[id];
 	setHexT(buffer, bsv->getCurrentValue(), 0);
-	buffer[4] = bsv->getTrend();
-	//setHexInt16(buffer, now() - bsv->getLastReadingTime(), 5);
-
-	PublishMqtt(topic, buffer, 5, true);
+	//buffer[4] = bsv->getTrend();
+	////setHexInt16(buffer, now() - bsv->getLastReadingTime(), 5);
+	//PublishMqtt(topic, buffer, 5, true);
+	PublishMqtt(topic, buffer, 4, true);
 }
 
+
+void PublishTime()
+{
+	if (!mqttClient.connected()) return;
+
+	const char* topic = "cha/ts/time";
+	int idx = 0;
+
+	time_t _now = now();
+
+	int len = setHexInt32(buffer, now(), 0);
+	PublishMqtt(topic, buffer, idx, false);
+}
 
 void PublishBoilerSettings()
 {
@@ -202,7 +215,7 @@ void PublishBoilerSettings()
 	idx = setHexT(buffer, boilerSettings.PoolSwitchOnT, idx);
 	idx = setHexT(buffer, boilerSettings.PoolSwitchOffT, idx);
 
-	idx = setHexInt16(buffer, warning_EMOF_IsActivated | 2 * warning_CFR_IsActivated | 4 * warning_SMX_IsActivated | 8 * warning_SMX_IsActivated, idx);
+	idx = setHexInt16(buffer, warning_EMOF_IsActivated | 2 * warning_CFR_IsActivated | 4 * warning_SMX_IsActivated | 8 * warning_SMX_IsActivated | 16 * warning_MAXT_IsActivated, idx);
 
 	//idx = setHexInt16(buffer, boilerSettings.BackupHeatingTS1_Start, idx);
 	//idx = setHexInt16(buffer, boilerSettings.BackupHeatingTS1_End, idx);
@@ -382,15 +395,23 @@ void callback(char* topic, byte * payload, unsigned int len) {
 		return;
 	}
 
-	//if (strcmp(topic, "chac/ts/settings/rs/names") == 0)
-	//{
-	//	Serial.println(F("New room sensor names"));
+	if (strcmp(topic, "chac/ts/gettime2") == 0)
+	{
+		PublishTime();
+		return;
+	}
 
-	//	saveData(payload, len);
+	if (strcmp(topic, "chac/ts/settime2") == 0)
+	{
+		char* data = (char*)payload;
+		long tm = readHexInt32(data);
 
-	//	PublishRoomSensorNamesAndOrder();
-	//	return;
-	//}
+		setTime(tm);
+		//RTC.set(now());
+		printDateTime(&Serial, now());
+		Serial.println();
+		return;
+	}
 
 	if (strcmp(topic, "chac/ts/settime") == 0)
 	{
@@ -423,8 +444,6 @@ void callback(char* topic, byte * payload, unsigned int len) {
 			setTime(hr, min, sec, day, month, yr);
 			//RTC.set(now());
 			printDateTime(&Serial, now());
-
-			//PublishAllStates(false, true);
 		}
 		return;
 	}
@@ -467,3 +486,14 @@ void publishTempSensorData()
 
 	PublishMqtt(topic, buffer, idx, false);
 }
+
+//if (strcmp(topic, "chac/ts/settings/rs/names") == 0)
+//{
+//	Serial.println(F("New room sensor names"));
+
+//	saveData(payload, len);
+
+//	PublishRoomSensorNamesAndOrder();
+//	return;
+//}
+
