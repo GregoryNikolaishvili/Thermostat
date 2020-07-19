@@ -320,31 +320,46 @@ void callback(char* topic, byte * payload, unsigned int len) {
 
 
 	// Set settings of room sensors
-	if (strcmp(topic, "chac/ts/settings/rs") == 0)
+	if (strncmp(topic, "chac/ts/settings2/rs/", 21) == 0)
 	{
-		char* p = (char*)payload;
-		int cnt = readHex(p, 2);
-		p += 2;
+		char* p = (char*)topic;
+		p += 21;
+		int id = readHex(p, 4);
 
-		Serial.print(F("New room sensor settings. Count="));
-		Serial.println(cnt);
+		p = (char*)payload;
 
-		if (cnt <= MAX_ROOM_SENSORS)
+		Serial.print(F("New room sensor settings. Id="));
+		Serial.println(id);
+
+		byte roomSensorIdx = -1;
+		for (byte i = 0; i < roomSensorSettingsCount; i++)
 		{
-			roomSensorSettingsCount = cnt;
-			for (byte i = 0; i < cnt; i++)
+			if (roomSensorSettings[i].id == id)
 			{
-				roomSensorSettings[i].id = readHex(p, 4);
-				p += 4;
-				roomSensorSettings[i].targetT = readHexT(p);
-				p += 4;
-				roomSensorSettings[i].relayId = readHex(p, 2);
-				p += 2;
+				roomSensorIdx = i;
+				break;
 			}
 		}
 
-		saveRoomSensorSettings(true);
-		ProcessRoomSensors();
+		// setting not found
+		if (roomSensorIdx < 0 && roomSensorSettingsCount < MAX_ROOM_SENSORS)
+		{
+			roomSensorIdx = roomSensorSettingsCount++;
+			roomSensorSettings[roomSensorIdx].relayId = 0;
+		}
+
+		if (roomSensorIdx >= 0)
+		{
+			roomSensorSettings[roomSensorIdx].id = id;
+			roomSensorSettings[roomSensorIdx].targetT = readHexT(p);
+			if (len > 4)
+			{
+				p += 4;
+				roomSensorSettings[roomSensorIdx].relayId = readHex(p, 2);
+			}
+			saveRoomSensorSettings(true);
+			ProcessRoomSensors();
+		}
 		return;
 	}
 
