@@ -1,4 +1,4 @@
-﻿#include "utility/w5100.h"
+#include "utility/w5100.h"
 
 byte mac[] = { 0x54, 0x34, 0x41, 0x30, 0x30, 0x08 };
 IPAddress ip(192, 168, 1, 8);
@@ -380,46 +380,6 @@ void callback(char* topic, byte * payload, unsigned int len) {
 		//boilerSettings.BackupHeatingTS3_End = readHex(p, 4); p += 4;
 		//boilerSettings.BackupHeatingTS3_SwitchOnT = readHexT(p); p += 4;
 		//boilerSettings.BackupHeatingTS3_SwitchOffT = readHexT(p); p += 4;
-
-		saveBoilerSettings(true);
-		ReInitBoiler();
-		return;
-	}
-
-	//TODO ეს ძველია და წასაშლელია
-	if (strcmp(topic, "chac/ts/settings/bl") == 0)
-	{
-		char* p = (char*)payload;
-
-		Serial.println(F("New boiler settings"));
-
-		boilerSettings.Mode = *p++;
-		boilerSettings.CollectorSwitchOnTempDiff = readHexT(p); p += 4;
-		boilerSettings.CollectorSwitchOffTempDiff = readHexT(p); p += 4;
-		boilerSettings.CollectorEmergencySwitchOffT = readHexT(p); p += 4;
-		boilerSettings.CollectorEmergencySwitchOnT = readHexT(p); p += 4;
-		boilerSettings.CollectorMinimumSwitchOnT = readHexT(p); p += 4;
-		boilerSettings.CollectorAntifreezeT = readHexT(p); p += 4;
-		boilerSettings.MaxTankT = readHexT(p); p += 4;
-		boilerSettings.AbsoluteMaxTankT = readHexT(p); p += 4;
-
-		boilerSettings.PoolSwitchOnT = readHexT(p); p += 4;
-		boilerSettings.PoolSwitchOffT = readHexT(p); p += 4;
-
-		boilerSettings.BackupHeatingTS1_Start = readHex(p, 4); p += 4;
-		boilerSettings.BackupHeatingTS1_End = readHex(p, 4); p += 4;
-		boilerSettings.BackupHeatingTS1_SwitchOnT = readHexT(p); p += 4;
-		boilerSettings.BackupHeatingTS1_SwitchOffT = readHexT(p); p += 4;
-
-		boilerSettings.BackupHeatingTS2_Start = readHex(p, 4); p += 4;
-		boilerSettings.BackupHeatingTS2_End = readHex(p, 4); p += 4;
-		boilerSettings.BackupHeatingTS2_SwitchOnT = readHexT(p); p += 4;
-		boilerSettings.BackupHeatingTS2_SwitchOffT = readHexT(p); p += 4;
-
-		boilerSettings.BackupHeatingTS3_Start = readHex(p, 4); p += 4;
-		boilerSettings.BackupHeatingTS3_End = readHex(p, 4); p += 4;
-		boilerSettings.BackupHeatingTS3_SwitchOnT = readHexT(p); p += 4;
-		boilerSettings.BackupHeatingTS3_SwitchOffT = readHexT(p); p += 4;
 
 		saveBoilerSettings(true);
 		ReInitBoiler();

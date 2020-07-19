@@ -81,10 +81,10 @@ void ProcessTemperatureSensors()
 
 	int TF = readFurnaceT();
 
-	Serial.print("T1 = "); Serial.println(TSolar);
-	Serial.print("T2 = "); Serial.println(T2);
-	Serial.print("T3 = "); Serial.println(T3);
-	Serial.print("T_furnace = "); Serial.println(TF);
+//	Serial.print("T1 = "); Serial.println(TSolar);
+//	Serial.print("T2 = "); Serial.println(T2);
+//	Serial.print("T3 = "); Serial.println(T3);
+//	Serial.print("T_furnace = "); Serial.println(TF);
 
 	TSolar = setBoilerT(T_SOLAR_PANEL_T, TSolar);
 	T2 = setBoilerT(T_TANK_BOTTOM, T2);
