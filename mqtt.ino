@@ -92,7 +92,7 @@ void ReconnectMqtt() {
 			PublishBoilerSettings();
 			PublishRoomSensorSettings();
 			//PublishRoomSensorNamesAndOrder();
-			PublishAllStates(false);
+			PublishAllStates(true);
 		}
 		else {
 			Serial.print(F("failed, rc="));

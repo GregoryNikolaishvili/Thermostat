@@ -16,7 +16,7 @@
 #define __AVR_atmega2560__
 #define __AVR_ATmega2560__
 #define F_CPU 16000000L
-#define ARDUINO 10809
+#define ARDUINO 10808
 #define ARDUINO_AVR_MEGA2560
 #define ARDUINO_ARCH_AVR
 #define __cplusplus 201103L
@@ -27,8 +27,6 @@
 #define __extension__
 #define __inline__
 #define __volatile__
-// Redefine __cplusplus to correct version: https://www.visualmicro.com/forums/YaBB.pl?num=1592217268
-#undef __cplusplus
 #define __cplusplus 201103L
 
 //#define GCC_VERSION 40902
