@@ -308,11 +308,29 @@ void callback(char* topic, byte * payload, unsigned int len) {
 		return;
 	}
 
+	if (strncmp(topic, "chac/ts/state/bl/", 17) == 0)
+	{
+		byte id = hexCharToByte(topic[17]);
+		bool value = payload[0] != '0';
+	
+		_boilerRelaySet(id, value);
+		return;
+	}
+
+	if (strncmp(topic, "chac/ts/state/hr/", 17) == 0)
+	{
+		byte id = hexCharToByte(topic[16]);
+		bool value = payload[0] != '0';
+
+		heaterRelaySetValue(id, value ? 100 : 0);
+		return;
+	}
+
+
 	if (strcmp(topic, "chac/ts/refresh") == 0)
 	{
 		PublishAllStates(false);
-		//PublishMqttAlive("cha/ts/alive");
-
+	
 		/*for (byte idx = 0; idx < roomSensorCount; idx++)
 			PublishRoomSensorT(idx);*/
 		return;
