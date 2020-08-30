@@ -10,11 +10,15 @@ PubSubClient mqttClient("192.168.1.23", 1883, callback, ethClient);     // Initi
 
 char buffer[MQTT_BUFFER_SIZE];
 
+bool doLog = true;
+
 void InitEthernet()
 {
 	Serial.println(F("Starting ethernet.."));
 
 	Ethernet.begin(mac, ip);
+	ethClient.setConnectionTimeout(2000);
+
 	W5100.setRetransmissionTime(0x07D0);
 	W5100.setRetransmissionCount(3);
 
@@ -24,6 +28,8 @@ void InitEthernet()
 
 void InitMqtt()
 {
+	mqttClient.setBufferSize(320);
+	mqttClient.setSocketTimeout(5);
 	ReconnectMqtt();
 }
 
@@ -49,25 +55,29 @@ void ProcessMqtt()
 
 void PublishMqtt(const char* topic, const char* message, int len, boolean retained)
 {
-	Serial.print(F("Publish. topic="));
-	Serial.print(topic);
-	Serial.print(F(", length="));
-	Serial.print(len);
+	if (doLog)
+	{
+		Serial.print(F("Publish. topic="));
+		Serial.print(topic);
+		Serial.print(F(", length="));
+		Serial.print(len);
 
-	Serial.print(F(", payload="));
-	for (int i = 0; i < len; i++)
-		Serial.print(message[i]);
-	Serial.println();
-
+		Serial.print(F(", payload="));
+		for (int i = 0; i < len; i++)
+			Serial.print(message[i]);
+		Serial.println();
+	}
 	mqttClient.publish(topic, (byte*)message, len, retained);
 }
 
-//void PublishMqttAlive(const char* topic)
-//{
-//	setHexInt32(buffer, now(), 0);
-//	PublishMqtt(topic, buffer, 8, false);
-//}
+void PublishAlive()
+{
+	if (!mqttClient.connected()) return;
 
+	const char* topic = "cha/ts/alive";
+	int len = setHexInt32(buffer, now(), 0);
+	PublishMqtt(topic, buffer, len, false);
+}
 
 void ReconnectMqtt() {
 
@@ -86,12 +96,10 @@ void ReconnectMqtt() {
 			// ... and resubscribe
 			mqttClient.subscribe("chac/ts/#", 1);     // Subscribe to a MQTT topic, qos = 1
 
-			mqttClient.publish("hubcommand/gettime", "chac/ts/settime", false); // request time
+			mqttClient.publish("hubcommand/gettime2", "chac/ts/settime2", false); // request time
 
-			//PublishControllerState();
 			PublishBoilerSettings();
 			PublishRoomSensorSettings();
-			//PublishRoomSensorNamesAndOrder();
 			PublishAllStates(true);
 		}
 		else {
@@ -101,17 +109,10 @@ void ReconnectMqtt() {
 	}
 }
 
-//void PublishControllerState()
-//{
-//	if (!mqttClient.connected()) return;
-//
-//	setHexInt16(buffer, thermostatControllerState, 0);
-//	PublishMqtt("cha/ts/state", buffer, 4, true);
-//}
-
-
 void PublishAllStates(bool isInitialState) {
 	if (!mqttClient.connected()) return;
+
+	doLog = false;
 
 	if (!isInitialState)
 		for (byte id = 0; id < BOILER_SENSOR_COUNT; id++)
@@ -122,6 +123,8 @@ void PublishAllStates(bool isInitialState) {
 
 	for (byte id = 0; id < BOILER_RELAY_COUNT; id++)
 		PublishBoilerRelayState(id, _isBoilerRelayOn(id));
+
+	doLog = true;
 }
 
 //void PublishRoomSensorT(byte idx)
@@ -285,6 +288,30 @@ void callback(char* topic, byte * payload, unsigned int len) {
 	Serial.write(payload, len);
 	Serial.println();
 
+	if (strcmp(topic, "chac/ts/alive") == 0)
+	{
+		PublishAlive();
+		return;
+	}
+
+	if (strcmp(topic, "chac/ts/gettime2") == 0)
+	{
+		PublishTime();
+		return;
+	}
+
+	if (strcmp(topic, "chac/ts/refresh") == 0)
+	{
+		PublishAllStates(false);
+		return;
+	}
+
+	if (strcmp(topic, "chac/ts/diag") == 0)
+	{
+		publishTempSensorData();
+		return;
+	}
+
 	if (len == 0)
 		return;
 
@@ -312,7 +339,7 @@ void callback(char* topic, byte * payload, unsigned int len) {
 	{
 		byte id = hexCharToByte(topic[17]);
 		bool value = payload[0] != '0';
-	
+
 		_boilerRelaySet(id, value);
 		return;
 	}
@@ -325,17 +352,6 @@ void callback(char* topic, byte * payload, unsigned int len) {
 		heaterRelaySetValue(id, value ? 100 : 0);
 		return;
 	}
-
-
-	if (strcmp(topic, "chac/ts/refresh") == 0)
-	{
-		PublishAllStates(false);
-	
-		/*for (byte idx = 0; idx < roomSensorCount; idx++)
-			PublishRoomSensorT(idx);*/
-		return;
-	}
-
 
 	// Set settings of room sensors
 	if (strncmp(topic, "chac/ts/settings2/rs/", 21) == 0)
@@ -419,11 +435,6 @@ void callback(char* topic, byte * payload, unsigned int len) {
 		return;
 	}
 
-	if (strcmp(topic, "chac/ts/gettime2") == 0)
-	{
-		PublishTime();
-		return;
-	}
 
 	if (strcmp(topic, "chac/ts/settime2") == 0)
 	{
@@ -475,13 +486,6 @@ void callback(char* topic, byte * payload, unsigned int len) {
 		ReInitBoiler();
 		return;
 	}
-
-	if (strcmp(topic, "chac/ts/diag") == 0)
-	{
-		publishTempSensorData();
-		return;
-	}
-
 }
 
 void publishTempSensorData()
@@ -507,13 +511,4 @@ void publishTempSensorData()
 	PublishMqtt(topic, buffer, idx, false);
 }
 
-//if (strcmp(topic, "chac/ts/settings/rs/names") == 0)
-//{
-//	Serial.println(F("New room sensor names"));
-
-//	saveData(payload, len);
-
-//	PublishRoomSensorNamesAndOrder();
-//	return;
-//}
 

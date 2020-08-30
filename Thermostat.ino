@@ -1,21 +1,21 @@
 #define REQUIRESALARMS false // FOR DS18B20 library
-#define MQTT_MAX_PACKET_SIZE 300 // FOR PubSubClient library // 5 + 2 + strlen(topic) + plength
-#define MQTT_SOCKET_TIMEOUT 5 // FOR PubSubClient library
 
 #include "Thermostat.h"
 
 #include <TimeLib.h>				// https://github.com/PaulStoffregen/Time
 #include <TimeAlarms.h>				// https://github.com/PaulStoffregen/TimeAlarms
 #include <DS1307RTC.h>				// https://github.com/PaulStoffregen/DS1307RTC
-//#include <Wire.h>
+
 #include <SPI.h>
-#include <Ethernet.h>
+#include <Ethernet.h>				// https://github.com/arduino-libraries/Ethernet
 #include <PubSubClient.h>			// https://github.com/knolleary/pubsubclient
+
 #include <Adafruit_MAX31865.h>		// https://github.com/adafruit/Adafruit_MAX31865
 #include <OneWire.h>				// https://github.com/PaulStoffregen/OneWire
 #include <DallasTemperature.h>	    // https://github.com/milesburton/Arduino-Temperature-Control-Library
 #include <MovingAverageFilter.h>
 #include <Temperature.h>
+
 #include <avr/wdt.h>
 
 extern Adafruit_MAX31865 solarSensor;
@@ -64,7 +64,7 @@ void setup()
 
 	Serial.begin(115200);
 	Serial.println();
-	Serial.println(F("Initializing.. ver. 2.0.2"));
+	Serial.println(F("Initializing.. ver. 2.1.0"));
 
 	pinMode(PIN_BLINKING_LED, OUTPUT);
 	digitalWrite(PIN_BLINKING_LED, LOW); // Turn on led at start

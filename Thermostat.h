@@ -17,15 +17,6 @@ const byte CIRCULATING_PUMP_ON_DELAY_MINUTES = 5;
 const int STORAGE_ADDRESS_BOILER_SETTINGS = 100;
 const int STORAGE_ADDRESS_ROOM_SENSOR_SETTINGS = 300;
 const int STORAGE_ADDRESS_DS18B20_ADDRESS_SETTINGS = 900;
-//const int STORAGE_ADDRESS_DATA = 1000;
-
-//const unsigned int ERR_GENERAL = 1;
-//const unsigned int ERR_DS18B20_SENSOR = 2;
-
-//const unsigned int ERR_EMOF = 4;
-//const unsigned int ERR_95_DEGREE = 8;
-//const unsigned int ERR_CFR = 16;
-//const unsigned int ERR_SMX = 32;
 
 const unsigned int ERR_T1 = 64;
 const unsigned int ERR_T2 = 128;
@@ -33,20 +24,13 @@ const unsigned int ERR_T3 = 256;
 const unsigned int ERR_TF = 512; // Furnace
 
 
-//#define state_is_error_bit_set(__mask__) ((thermostatControllerState & (__mask__)) != 0)
-//#define state_set_error_bit(__mask__) (thermostatState |= (__mask__))
-//#define state_clear_error_bit(__mask__) (thermostatState &= ~(__mask__))
-
 const byte HEATER_RELAY_COUNT = 16;
 const byte BOILER_RELAY_COUNT = 4;
 const byte BOILER_SENSOR_COUNT = 4;
 
 const byte MAX_ROOM_SENSORS = 30;
-//const int T_UNDEFINED = 9999;
 
 inline boolean isValidT(int T) { return T != T_UNDEFINED; }
-
-//const char BOILER_MODE_COUNT = 4;
 
 const char BOILER_MODE_OFF = 'N';
 const char BOILER_MODE_SUMMER = 'S';
