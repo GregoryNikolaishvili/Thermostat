@@ -441,7 +441,7 @@ void callback(char* topic, byte * payload, unsigned int len) {
 		char* data = (char*)payload;
 		long tm = readHexInt32(data);
 
-		setTime(tm);
+		setTime(tm + 4L * SECS_PER_HOUR);
 		//RTC.set(now());
 		printDateTime(&Serial, now());
 		Serial.println();
