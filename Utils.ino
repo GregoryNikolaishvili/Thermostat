@@ -12,7 +12,7 @@ int readHexT(const char* s)
 	return value - 1000;
 }
 
-int readHexInt32(const char* s)
+long readHexInt32(const char* s)
 {
 	long value = 0;
 	int length = 8;
