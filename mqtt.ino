@@ -379,7 +379,7 @@ void callback(char* topic, byte * payload, unsigned int len) {
 		if (roomSensorIdx < 0 && roomSensorSettingsCount < MAX_ROOM_SENSORS)
 		{
 			roomSensorIdx = roomSensorSettingsCount++;
-			roomSensorSettings[roomSensorIdx].relayId = 0;
+			roomSensorSettings[roomSensorIdx].relayId = 0; // Inactive
 		}
 
 		if (roomSensorIdx >= 0)
@@ -510,5 +510,3 @@ void publishTempSensorData()
 
 	PublishMqtt(topic, buffer, idx, false);
 }
-
-

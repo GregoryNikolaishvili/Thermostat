@@ -44,8 +44,8 @@ void readSettings()
 	for (byte i = 0; i < MAX_ROOM_SENSORS; i++)
 	{
 		roomSensorSettings[i].id = 0;
-		roomSensorSettings[i].targetT = 25;
-		roomSensorSettings[i].relayId = 0;
+		roomSensorSettings[i].targetT = 220; // 22 degrees
+		roomSensorSettings[i].relayId = 0; // Inactive
 	}
 
 	// boiler
