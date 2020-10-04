@@ -91,7 +91,7 @@ const byte PIN_BL_RESERVE4 = 45;
 struct RoomSensorSettingStructure {
 	int id;
 	int targetT;
-	byte relayId;
+	int relayId; // 0 = Inactive
 };
 
 

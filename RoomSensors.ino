@@ -44,8 +44,8 @@ void addRoomT(int id, int value)
 	if (roomSensorSettingsCount < MAX_ROOM_SENSORS)
 	{
 		roomSensorSettings[roomSensorSettingsCount].id = id;
-		roomSensorSettings[roomSensorSettingsCount].targetT = 220;
-		roomSensorSettings[roomSensorSettingsCount].relayId = 0;
+		roomSensorSettings[roomSensorSettingsCount].targetT = 220; // 22 degree
+		roomSensorSettings[roomSensorSettingsCount].relayId = 0; // Inactive
 		roomSensorSettingsCount++;
 
 		roomSensorSettingsChanged(true);
@@ -113,7 +113,7 @@ void ProcessRoomSensor(int id, bool checkCirculatingPump)
 			else if (deltaT > 100)
 				deltaT = 100;
 
-			heaterRelaySetValue(rss->relayId, deltaT);
+			heaterRelaySetValue(rss->relayId - 1, deltaT);
 		}
 	}
 
@@ -133,7 +133,7 @@ bool checkAllHeaterRelaysAreOff()
 
 		if ((rss != NULL) && (rss->relayId > 0))
 		{
-			if (heaterRelayGetValue(rss->relayId) > 0)
+			if (heaterRelayGetValue(rss->relayId - 1) > 0)
 			{
 				allHeaterRelaysAreOff = false;
 				break;

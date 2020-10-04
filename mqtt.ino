@@ -149,7 +149,7 @@ void PublishHeaterRelayState(byte id, byte value)
 
 	char topic[12];
 	strcpy(topic, "cha/ts/hr/?");
-	topic[10] = byteToHexChar(id);
+	topic[10] = byteToHexChar(id + 1);
 	setHexByte(buffer, value, 0);
 	PublishMqtt(topic, buffer, 2, true);
 }
@@ -248,25 +248,6 @@ void PublishRoomSensorSettings()
 
 	PublishMqtt(topic, buffer, idx, true);
 }
-
-//void PublishRoomSensorNamesAndOrder()
-//{
-//	if (!mqttClient.connected()) return;
-//
-//	const char* topic = "cha/ts/names/rs";
-//
-//	int length = eeprom_read_word((uint16_t *)STORAGE_ADDRESS_DATA);
-//	//Serial.print("load name & order data. len=");
-//	//Serial.println(length);
-//
-//	for (int i = 0; i < length; i++)
-//	{
-//		byte b = eeprom_read_byte((const uint8_t *)(STORAGE_ADDRESS_DATA + 2 + i));
-//		buffer[i] = b;
-//	}
-//
-//	PublishMqtt(topic, buffer, length, true);
-//}
 
 //void PublishAlert(char*message)
 //{
@@ -379,7 +360,7 @@ void callback(char* topic, byte * payload, unsigned int len) {
 		if (roomSensorIdx < 0 && roomSensorSettingsCount < MAX_ROOM_SENSORS)
 		{
 			roomSensorIdx = roomSensorSettingsCount++;
-			roomSensorSettings[roomSensorIdx].relayId = 0;
+			roomSensorSettings[roomSensorIdx].relayId = 0; // Inactive
 		}
 
 		if (roomSensorIdx >= 0)
