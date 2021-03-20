@@ -95,6 +95,8 @@ void setup()
 	if (dtNBR_ALARMS != 30)
 		Serial.println(F("Alarm count mismatch"));
 
+	setTime(0, 0, 1, 1, 1, 2001);
+
 	SPI.begin();
 
 	//Wire.begin();
@@ -129,8 +131,6 @@ void setup()
 
 	wdt_enable(WDTO_8S);
 
-  setTime(0, 0, 1, 1, 1, 2001);
-  
 	Serial.println(F("Start"));
 }
 
