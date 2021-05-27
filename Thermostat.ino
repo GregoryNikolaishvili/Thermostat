@@ -99,8 +99,6 @@ void setup()
 
 	SPI.begin();
 
-	//Wire.begin();
-
 	InitTemperatureSensors();
 
 	readSettings();
