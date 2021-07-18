@@ -181,6 +181,18 @@ void PublishBoilerSensorT(byte id)
 	PublishMqtt(topic, buffer, 4, true);
 }
 
+void PublishHelioPressure()
+{
+	if (!mqttClient.connected()) return;
+
+	char topic[12];
+	strcpy(topic, "cha/ts/hp/0");
+
+	setHexInt16(buffer, getHelioPressure10(), 0);
+	PublishMqtt(topic, buffer, 4, true);
+}
+
+
 
 void PublishTime()
 {

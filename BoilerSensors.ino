@@ -1,5 +1,3 @@
-#define RREF 4000.0
-
 Adafruit_MAX31865 solarSensor = Adafruit_MAX31865(PIN_MAX31865_SELECT);
 
 Temperature* boilerSensorsValues[BOILER_SENSOR_COUNT];
@@ -14,22 +12,50 @@ bool warning_CFR_IsActivated = false;
 bool warning_SMX_IsActivated = false;
 bool warning_MAXT_IsActivated = false;
 
+int helioPressure10 = 0;
+
+int getHelioPressure10()
+{
+	return helioPressure10;
+}
+
+// Returns pressure * 10 in Bars
+void ProcessHelioPressure()
+{
+	//TODO Needs calibration
+	int value = analogRead(PIN_PRESSURE_SENSOR);
+	// Sensor output voltage
+	float V = value * 5.00 / 1024;  // 5.00 is reference voltage
+	//Calculate water pressure 
+	float P = (V - 0.5) * 500 / 4;   // 500 = 500 KPa = 5 Bar, 4 = (4.5 - 0.5)
+	int pressure10 = round(P / 10); // 0.1 precision is enough
+
+	Serial.print("Pressure = ");
+	Serial.print(P);
+	Serial.print(" KPa, Value = ");
+	Serial.print(value);
+	Serial.print(", Voltage = ");
+	Serial.print(V);
+	Serial.println(" mV");
+
+	if (pressure10 != helioPressure10)
+	{
+		helioPressure10 = pressure10;
+		PublishHelioPressure();
+	}
+}
 
 void InitTemperatureSensors()
 {
+	solarSensor.begin(MAX31865_3WIRE);
+
 	for (int i = 0; i < BOILER_SENSOR_COUNT; i++)
 		boilerSensorsValues[i] = new Temperature(10);
 
 	initDS18b20TempSensors();
 
-	solarSensor.begin(MAX31865_2WIRE);  // set to 2WIRE or 4WIRE as necessary
-	delay(100);
-	solarSensor.readRTD_step1();
-	delay(10);
-	solarSensor.readRTD_step2();
-	delay(65);
-	lastReadSolarPanelRTD = solarSensor.readRTD_step3();
-
+	//lastReadSolarPanelRTD = solarSensor.readRTD();
+	solarSensor.readRTD();
 	startDS18B20TemperatureMeasurements();
 }
 
@@ -76,6 +102,7 @@ void CheckCirculatingPump()
 void ProcessTemperatureSensors()
 {
 	int TSolar = readSolarPaneT(); // Solar panel T
+
 	int T2 = readTankBottomT(); // Tank bottom
 	int T3 = readTankTopT(); // Tank top
 
@@ -312,8 +339,10 @@ void CheckBoilerTank(int TBoiler)
 // Returns temperature multiplied by 10, or T_UNDEFINED
 int readSolarPaneT()
 {
+	#define RREF 4300.0 // https://learn.adafruit.com/adafruit-max31865-rtd-pt100-amplifier/arduino-code
+
 	int T;
-	float temperature = solarSensor.temperature(lastReadSolarPanelRTD, 1000.0, RREF);
+	float temperature = solarSensor.temperature(1000.0, RREF);
 
 	//Serial.print("RTD value: "); Serial.println(lastReadSolarPanelRTD);
 	//Serial.print(F("RTD Resistance = ")); Serial.println(RREF * lastReadSolarPanelRTD / 32768, 8);
@@ -322,6 +351,8 @@ int readSolarPaneT()
 	// Check and print any faults
 	uint8_t fault = solarSensor.readFault();
 	if (fault) {
+		//TODO Publish faults
+
 		Serial.print(F("Fault 0x")); Serial.println(fault, HEX);
 		if (fault & MAX31865_FAULT_HIGHTHRESH) {
 			Serial.println(F("RTD High Threshold"));

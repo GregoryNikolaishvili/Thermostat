@@ -56,7 +56,7 @@ unsigned long secondTicks = 0;
 
 //unsigned int thermostatControllerState = 0;
 
-uint16_t lastReadSolarPanelRTD;
+//uint16_t lastReadSolarPanelRTD;
 
 void setup()
 {
@@ -92,32 +92,21 @@ void setup()
 		pinMode(boilerRelayPins[i], OUTPUT);
 	}
 
+	pinMode(PIN_PRESSURE_SENSOR, INPUT);
+
 	if (dtNBR_ALARMS != 30)
 		Serial.println(F("Alarm count mismatch"));
 
 	setTime(0, 0, 1, 1, 1, 2001);
 
-	SPI.begin();
-
 	InitTemperatureSensors();
 
 	readSettings();
 
+	delay(1000);
 	InitEthernet();
 
 	wdt_enable(WDTO_8S);
-
-	startDS18B20TemperatureMeasurements();
-	delay(1000);
-	wdt_reset();
-
-	solarSensor.readRTD_step1();
-	delay(500);
-	wdt_reset();
-
-	solarSensor.readRTD_step2();
-	delay(500);
-	wdt_reset();
 
 	ProcessTemperatureSensors();
 
@@ -165,15 +154,13 @@ void oncePerHalfSecond(void)
 
 	if ((halfSecondTicks + 4) % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0) // 2 second before processing temperatures
 		startDS18B20TemperatureMeasurements();
-	if ((halfSecondTicks + 2) % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0) // 1 second before processing temperatures
-		solarSensor.readRTD_step1();
-	if ((halfSecondTicks + 1) % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0) // 0.5 second before processing temperatures
-		solarSensor.readRTD_step2();
 
 	if (halfSecondTicks % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0)
 	{
-		lastReadSolarPanelRTD = solarSensor.readRTD_step3();
+		//lastReadSolarPanelRTD = solarSensor.readRTD();
 		ProcessTemperatureSensors();
+
+		ProcessHelioPressure();
 	}
 
 	if ((halfSecondTicks % 2) == 0)

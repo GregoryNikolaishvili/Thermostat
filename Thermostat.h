@@ -51,6 +51,8 @@ const byte T_TANK_BOTTOM = 1;
 const byte T_TANK_TOP = 2;
 const byte T_FURNACE = 3;
 
+const byte PIN_PRESSURE_SENSOR = A0;
+
 const byte PIN_MANUAL_MODE_LED = 3;
 const byte PIN_SD_CARD_SELECT = 4;
 const byte PIN_MAX31865_SELECT = 5;
