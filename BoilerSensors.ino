@@ -22,21 +22,21 @@ int getHelioPressure10()
 // Returns pressure * 10 in Bars
 void ProcessHelioPressure()
 {
-	//TODO Needs calibration
 	int value = analogRead(PIN_PRESSURE_SENSOR);
 	// Sensor output voltage
 	float V = value * 5.00 / 1024;  // 5.00 is reference voltage
 	//Calculate water pressure 
-	float P = (V - 0.5) * 500 / 4;   // 500 = 500 KPa = 5 Bar, 4 = (4.5 - 0.5)
+	float P = V * 498 / 3.9;   // 500 = 500 KPa = 5 Bar, calibrated July 23, 2021)
 	int pressure10 = round(P / 10); // 0.1 precision is enough
 
-	Serial.print("Pressure = ");
-	Serial.print(P);
-	Serial.print(" KPa, Value = ");
-	Serial.print(value);
-	Serial.print(", Voltage = ");
-	Serial.print(V);
-	Serial.println(" mV");
+//	Serial.print("Pressure = ");
+//	Serial.print(P);
+//	Serial.print(" KPa, Value = ");
+//	Serial.print(value);
+//	Serial.print(", Voltage = ");
+//	Serial.print(V);
+//  Serial.print("V, P10 = ");
+//  Serial.println(pressure10);
 
 	if (pressure10 != helioPressure10)
 	{
@@ -351,6 +351,10 @@ int readSolarPaneT()
 	// Check and print any faults
 	uint8_t fault = solarSensor.readFault();
 	if (fault) {
+		T = T_UNDEFINED;
+		solarSensor.clearFault();
+
+		PublishErrorCode(fault);
 		//TODO Publish faults
 
 		Serial.print(F("Fault 0x")); Serial.println(fault, HEX);
@@ -372,9 +376,6 @@ int readSolarPaneT()
 		if (fault & MAX31865_FAULT_OVUV) {
 			Serial.println(F("Under/Over voltage"));
 		}
-		solarSensor.clearFault();
-
-		T = T_UNDEFINED;
 	}
 	else
 	{

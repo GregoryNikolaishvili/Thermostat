@@ -1,4 +1,4 @@
-#include "utility/w5100.h"
+//#include "utility/w5100.h"
 
 byte mac[] = { 0x54, 0x34, 0x41, 0x30, 0x30, 0x08 };
 IPAddress ip(192, 168, 1, 8);
@@ -19,8 +19,8 @@ void InitEthernet()
 	Ethernet.begin(mac, ip);
 	ethClient.setConnectionTimeout(2000);
 
-	W5100.setRetransmissionTime(0x07D0);
-	W5100.setRetransmissionCount(3);
+	Ethernet.setRetransmissionTimeout(250);
+	Ethernet.setRetransmissionCount(4);
 
 	Serial.print(F("IP Address: "));
 	Serial.println(Ethernet.localIP());
@@ -100,7 +100,7 @@ void ReconnectMqtt() {
 
 			PublishBoilerSettings();
 			PublishRoomSensorSettings();
-			PublishAllStates(true);
+			PublishAllStates();
 		}
 		else {
 			Serial.print(F("failed, rc="));
@@ -109,14 +109,13 @@ void ReconnectMqtt() {
 	}
 }
 
-void PublishAllStates(bool isInitialState) {
+void PublishAllStates() {
 	if (!mqttClient.connected()) return;
 
 	doLog = false;
 
-	if (!isInitialState)
-		for (byte id = 0; id < BOILER_SENSOR_COUNT; id++)
-			PublishBoilerSensorT(id);
+	for (byte id = 0; id < BOILER_SENSOR_COUNT; id++)
+		PublishBoilerSensorT(id);
 
 	for (byte id = 0; id < HEATER_RELAY_COUNT; id++)
 		PublishHeaterRelayState(id, heaterRelayGetValue(id));
@@ -192,6 +191,13 @@ void PublishHelioPressure()
 	PublishMqtt(topic, buffer, 4, true);
 }
 
+void PublishErrorCode(uint8_t fault)
+{
+	if (!mqttClient.connected()) return;
+
+	setHexInt16(buffer, fault, 0);
+	PublishMqtt("cha/ts/error", buffer, 4, true);
+}
 
 
 void PublishTime()
@@ -314,7 +320,7 @@ void callback(char* topic, byte * payload, unsigned int len) {
 
 	if (strcmp(topic, "chac/ts/refresh") == 0)
 	{
-		PublishAllStates(false);
+		PublishAllStates();
 		return;
 	}
 

@@ -64,7 +64,7 @@ void setup()
 
 	Serial.begin(115200);
 	Serial.println();
-	Serial.println(F("Initializing.. ver. 2.1.2"));
+	Serial.println(F("Initializing.. ver. 3.0.0"));
 
 	pinMode(PIN_BLINKING_LED, OUTPUT);
 	digitalWrite(PIN_BLINKING_LED, LOW); // Turn on led at start
@@ -109,6 +109,7 @@ void setup()
 	wdt_enable(WDTO_8S);
 
 	ProcessTemperatureSensors();
+	ProcessHelioPressure();
 
 	wdt_disable();
 
@@ -190,7 +191,7 @@ void oncePer1Minute()
 	ProcessRoomSensors();
 
 	if (secondTicks > 0) // do not publish on startup
-		PublishAllStates(false);
+		PublishAllStates();
 }
 
 void heaterRelaySetValue(byte id, byte value)
@@ -349,28 +350,3 @@ bool _isBoilerRelayOn(byte id)
 		return !digitalRead(boilerRelayPins[id]);
 	return false;
 }
-
-//
-//boolean state_set_error_bit(int mask)
-//{
-//	if (!state_is_error_bit_set(mask))
-//	{
-//		thermostatControllerState |= mask;
-//		PublishControllerState();
-//		return true;
-//	}
-//
-//	return false;
-//}
-//
-//boolean state_clear_error_bit(int mask)
-//{
-//	if (state_is_error_bit_set(mask))
-//	{
-//		thermostatControllerState &= ~mask;
-//		PublishControllerState();
-//		return true;
-//	}
-//
-//	return false;
-//}
