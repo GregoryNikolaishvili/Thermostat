@@ -123,6 +123,8 @@ void PublishAllStates() {
 	for (byte id = 0; id < BOILER_RELAY_COUNT; id++)
 		PublishBoilerRelayState(id, _isBoilerRelayOn(id));
 
+  PublishHelioPressure();
+
 	doLog = true;
 }
 
