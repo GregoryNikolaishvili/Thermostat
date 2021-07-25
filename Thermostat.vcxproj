@@ -107,6 +107,9 @@
     <None Include="DS18B20.ino">
       <FileType>CppCode</FileType>
     </None>
+    <None Include="HelioPressure.ino">
+      <FileType>CppCode</FileType>
+    </None>
     <None Include="mqtt.ino">
       <FileType>CppCode</FileType>
     </None>

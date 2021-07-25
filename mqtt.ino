@@ -176,9 +176,7 @@ void PublishBoilerSensorT(byte id)
 
 	Temperature* bsv = boilerSensorsValues[id];
 	setHexT(buffer, bsv->getCurrentValue(), 0);
-	//buffer[4] = bsv->getTrend();
-	////setHexInt16(buffer, now() - bsv->getLastReadingTime(), 5);
-	//PublishMqtt(topic, buffer, 5, true);
+
 	PublishMqtt(topic, buffer, 4, true);
 }
 
@@ -193,13 +191,13 @@ void PublishHelioPressure()
 	PublishMqtt(topic, buffer, 4, true);
 }
 
-void PublishErrorCode(uint8_t fault)
-{
-	if (!mqttClient.connected()) return;
-
-	setHexInt16(buffer, fault, 0);
-	PublishMqtt("cha/ts/error", buffer, 4, true);
-}
+//void PublishErrorCode(uint8_t fault)
+//{
+//	if (!mqttClient.connected()) return;
+//
+//	setHexInt16(buffer, fault, 0);
+//	PublishMqtt("cha/ts/error", buffer, 4, true);
+//}
 
 
 void PublishTime()
@@ -231,7 +229,9 @@ void PublishBoilerSettings()
 	idx = setHexT(buffer, boilerSettings.PoolSwitchOnT, idx);
 	idx = setHexT(buffer, boilerSettings.PoolSwitchOffT, idx);
 
-	idx = setHexInt16(buffer, warning_EMOF_IsActivated | 2 * warning_CFR_IsActivated | 4 * warning_SMX_IsActivated | 8 * warning_SMX_IsActivated | 16 * warning_MAXT_IsActivated, idx);
+	idx = setHexInt16(buffer, warning_EMOF_IsActivated | 2 * warning_CFR_IsActivated | 4 * warning_SMX_IsActivated | 8 * warning_MAXT_IsActivated |
+		16 * warning_SolarSensorFail_IsActivated | 32 * warning_TankBottomSensorFail_IsActivated | 64 * warning_TankTopSensorFail_IsActivated |
+		128 * warning_HelioPressure_IsActivated, idx);
 
 	//idx = setHexInt16(buffer, boilerSettings.BackupHeatingTS1_Start, idx);
 	//idx = setHexInt16(buffer, boilerSettings.BackupHeatingTS1_End, idx);

@@ -22,6 +22,7 @@
     <None Include="RoomSensors.ino" />
     <None Include="Settings.ino" />
     <None Include="Utils.ino" />
+    <None Include="HelioPressure.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.Thermostat.vsarduino.h">

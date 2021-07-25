@@ -46,12 +46,12 @@ bool getSensorAddress(DeviceAddress addr, int id)
 void readDS18B20SensorsData()
 {
 	memset(&tempSensors, 0, sizeof(tempSensors));
-	eeprom_read_block(&tempSensors, (uint8_t *)STORAGE_ADDRESS_DS18B20_ADDRESS_SETTINGS, sizeof(tempSensors));
+	eeprom_read_block(&tempSensors, (uint8_t*)STORAGE_ADDRESS_DS18B20_ADDRESS_SETTINGS, sizeof(tempSensors));
 }
 
 void saveDS18B20SensorsData()
 {
-	eeprom_write_block(&tempSensors, (uint8_t *)STORAGE_ADDRESS_DS18B20_ADDRESS_SETTINGS, sizeof(tempSensors));
+	eeprom_write_block(&tempSensors, (uint8_t*)STORAGE_ADDRESS_DS18B20_ADDRESS_SETTINGS, sizeof(tempSensors));
 	Serial.println(F("New DS18B20 settings applied"));
 }
 
@@ -65,21 +65,6 @@ bool isSameSensorAddress(const DeviceAddress addr1, const DeviceAddress addr2)
 	return true;
 }
 
-//void clearSensorAddress(DeviceAddress addr)
-//{
-//	for (byte i = 0; i < sizeof(DeviceAddress); i++)
-//		addr[i] = 0;
-//}
-
-//bool isZeroAddress(const DeviceAddress addr)
-//{
-//	for (byte i = 0; i < sizeof(DeviceAddress); i++)
-//	{
-//		if (addr[i] != 0)
-//			return false;
-//	}
-//	return true;
-//}
 
 void copySensorAddress(const DeviceAddress addrFrom, DeviceAddress addrTo)
 {
@@ -169,14 +154,17 @@ int getTemperatureById(int id)
 	if (tempSensors[id].oneWireId < 0xFF)
 	{
 		float Tx = dallasSensors.getTempC(tempSensors[id].address);
-		T = round(Tx) * 10; // 1 degree precicion is enough
+		if (Tx > DEVICE_DISCONNECTED_C)
+			T = round(Tx) * 10; // 1 degree precicion is enough
 	}
 	return T;
 }
 
-int getTemperatureByOneWireId(int id)
-{
-	float Tx = dallasSensors.getTempCByIndex(id);
-	int T = round(Tx) * 10;  // 1 degree precicion is enough
-	return T;
-}
+//int getTemperatureByOneWireId(int id)
+//{
+//	int T = T_UNDEFINED;
+//	float Tx = dallasSensors.getTempCByIndex(id);
+//	if (Tx > DEVICE_DISCONNECTED_C)
+//		T = round(Tx) * 10;  // 1 degree precicion is enough
+//	return T;
+//}

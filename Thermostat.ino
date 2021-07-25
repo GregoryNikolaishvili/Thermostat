@@ -64,7 +64,7 @@ void setup()
 
 	Serial.begin(115200);
 	Serial.println();
-	Serial.println(F("Initializing.. ver. 3.0.1"));
+	Serial.println(F("Initializing.. ver. 3.0.2"));
 
 	pinMode(PIN_BLINKING_LED, OUTPUT);
 	digitalWrite(PIN_BLINKING_LED, LOW); // Turn on led at start
@@ -72,11 +72,14 @@ void setup()
 	pinMode(PIN_MANUAL_MODE_LED, OUTPUT);
 	digitalWrite(PIN_MANUAL_MODE_LED, LOW); // Turn on manual mode led at start
 
-	//pinMode(PIN_MAX31865_SELECT, OUTPUT);
-	//digitalWrite(PIN_MAX31865_SELECT, HIGH); // Disable MAX31865
-
 	pinMode(PIN_SD_CARD_SELECT, OUTPUT);
 	digitalWrite(PIN_SD_CARD_SELECT, HIGH); // Disable SD card
+
+	pinMode(PIN_ETHERNET_SS, OUTPUT);
+	digitalWrite(PIN_ETHERNET_SS, HIGH); // Disable Ethernet
+
+	pinMode(PIN_MAX31865_SELECT, OUTPUT);
+	digitalWrite(PIN_MAX31865_SELECT, HIGH); // Disable MAX31865
 
 	// Init relays
 	for (byte i = 0; i < HEATER_RELAY_COUNT; i++)
@@ -100,6 +103,7 @@ void setup()
 	setTime(0, 0, 1, 1, 1, 2001);
 
 	InitTemperatureSensors();
+	InitHelioPressureSensor();
 
 	readSettings();
 
@@ -158,10 +162,13 @@ void oncePerHalfSecond(void)
 
 	if (halfSecondTicks % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0)
 	{
-		//lastReadSolarPanelRTD = solarSensor.readRTD();
-		ProcessTemperatureSensors();
+		bool publishError = false;
 
-		ProcessHelioPressure();
+		ProcessTemperatureSensors(publishError);
+		ProcessHelioPressure(publishError);
+
+		if (publishError)
+			PublishBoilerSettings();
 	}
 
 	if ((halfSecondTicks % 2) == 0)

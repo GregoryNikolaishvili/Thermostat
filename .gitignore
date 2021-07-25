@@ -79,3 +79,12 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 .vs/Thermostat/v15/.suo
+.vs/Thermostat/v16/.suo
+.vs/Thermostat/v16/Browse.VC.db
+.vs/Thermostat/v16/ipch/AutoPCH/64b8c7d680d11fe5/.THERMOSTAT.VSARDUINO.ipch
+.vs/Thermostat/v16/ipch/AutoPCH/df8d8d57540e0e80/HELIOPRESSURE.ipch
+__vm/.Thermostat.vsarduino.h
+__vm/Compile.vmps.xml
+__vm/Configuration.Debug.vmps.xml
+__vm/.Thermostat.vsarduino.h
+__vm/Compile.vmps.xml

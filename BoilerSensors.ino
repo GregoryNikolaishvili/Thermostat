@@ -2,6 +2,7 @@ Adafruit_MAX31865 solarSensor = Adafruit_MAX31865(PIN_MAX31865_SELECT);
 
 Temperature* boilerSensorsValues[BOILER_SENSOR_COUNT];
 
+
 BoilerSettingStructure boilerSettings;
 
 bool isBoilerTankOverheated = false;
@@ -12,45 +13,19 @@ bool warning_CFR_IsActivated = false;
 bool warning_SMX_IsActivated = false;
 bool warning_MAXT_IsActivated = false;
 
-int helioPressure10 = 0;
+bool warning_SolarSensorFail_IsActivated = false;
+bool warning_TankBottomSensorFail_IsActivated = false;
+bool warning_TankTopSensorFail_IsActivated = false;
+bool warning_HelioPressure_IsActivated = false;
 
-int getHelioPressure10()
-{
-	return helioPressure10;
-}
-
-// Returns pressure * 10 in Bars
-void ProcessHelioPressure()
-{
-	int value = analogRead(PIN_PRESSURE_SENSOR);
-	// Sensor output voltage
-	float V = value * 5.00 / 1024;  // 5.00 is reference voltage
-	//Calculate water pressure 
-	float P = V * 498 / 3.9;   // 500 = 500 KPa = 5 Bar, calibrated July 23, 2021)
-	int pressure10 = round(P / 10); // 0.1 precision is enough
-
-//	Serial.print("Pressure = ");
-//	Serial.print(P);
-//	Serial.print(" KPa, Value = ");
-//	Serial.print(value);
-//	Serial.print(", Voltage = ");
-//	Serial.print(V);
-//  Serial.print("V, P10 = ");
-//  Serial.println(pressure10);
-
-	if (pressure10 != helioPressure10)
-	{
-		helioPressure10 = pressure10;
-		PublishHelioPressure();
-	}
-}
 
 void InitTemperatureSensors()
 {
 	solarSensor.begin(MAX31865_3WIRE);
+	solarSensor.enable50Hz(true);
 
 	for (int i = 0; i < BOILER_SENSOR_COUNT; i++)
-		boilerSensorsValues[i] = new Temperature(10);
+		boilerSensorsValues[i] = new Temperature(6);
 
 	initDS18b20TempSensors();
 
@@ -96,125 +71,138 @@ void CheckCirculatingPump()
 		circPumpPumpOn();
 }
 
-
-
 // boiler & solar
-void ProcessTemperatureSensors()
+void ProcessTemperatureSensors(bool &publishError)
 {
 	int TSolar = readSolarPaneT(); // Solar panel T
 
-	int T2 = readTankBottomT(); // Tank bottom
-	int T3 = readTankTopT(); // Tank top
+	int TBottom = readTankBottomT(); // Tank bottom
+	int TTop = readTankTopT(); // Tank top
 
 	int TF = readFurnaceT();
 
-//	Serial.print("T1 = "); Serial.println(TSolar);
-//	Serial.print("T2 = "); Serial.println(T2);
-//	Serial.print("T3 = "); Serial.println(T3);
-//	Serial.print("T_furnace = "); Serial.println(TF);
+	//	Serial.print("T1 = "); Serial.println(TSolar);
+	//	Serial.print("T2 = "); Serial.println(T2);
+	//	Serial.print("T3 = "); Serial.println(T3);
+	//	Serial.print("T_furnace = "); Serial.println(TF);
+
+	if (!isValidT(TSolar))
+	{
+		if (!warning_SolarSensorFail_IsActivated)
+		{
+			publishError = true;
+			warning_SolarSensorFail_IsActivated = true;
+		}
+	}
+	else
+	{
+		if (warning_SolarSensorFail_IsActivated)
+		{
+			publishError = true;
+			warning_SolarSensorFail_IsActivated = false;
+		}
+	}
+
+	if (!isValidT(TBottom))
+	{
+		if (!warning_TankBottomSensorFail_IsActivated)
+		{
+			publishError = true;
+			warning_TankBottomSensorFail_IsActivated = true;
+		}
+	}
+	else
+	{
+		if (warning_TankBottomSensorFail_IsActivated)
+		{
+			publishError = true;
+			warning_TankBottomSensorFail_IsActivated = false;
+		}
+	}
+
+	if (!isValidT(TTop))
+	{
+		if (!warning_TankTopSensorFail_IsActivated)
+		{
+			publishError = true;
+			warning_TankTopSensorFail_IsActivated = true;
+		}
+	}
+	else
+	{
+		if (warning_TankTopSensorFail_IsActivated)
+		{
+			publishError = true;
+			warning_TankTopSensorFail_IsActivated = false;
+		}
+	}
+
 
 	TSolar = setBoilerT(T_SOLAR_PANEL_T, TSolar);
-	T2 = setBoilerT(T_TANK_BOTTOM, T2);
-	T3 = setBoilerT(T_TANK_TOP, T3);
+	TBottom = setBoilerT(T_TANK_BOTTOM, TBottom);
+	TTop = setBoilerT(T_TANK_TOP, TTop);
 	TF = setBoilerT(T_FURNACE, TF);
 
 	// Read sensor data
 	if (!isValidT(TSolar))
 	{
 		solarPumpOn();
-		//if (state_set_error_bit(ERR_T1))
-		//{
-		//	solarPumpOn();
-		//	Serial.println(F("Solar sensor fail (T1)"));
-		//}
 	}
-	//else
-	//{
-	//	if (state_clear_error_bit(ERR_T1))
-	//		Serial.println(F("Solar sensor restored (T1)"));
-	//}
 
-	if (!isValidT(T3))
+	if (!isValidT(TTop))
 	{
-		//if (state_set_error_bit(ERR_T3))
-		//	Serial.println(F("Boiler sensor fail (T3)"));
-		T3 = T2;
+		TTop = TBottom;
 	}
-	//else
-	//{
-	//	if (state_clear_error_bit(ERR_T3))
-	//		Serial.println(F("Boiler sensor restored (T3)"));
-	//}
 
-	if (!isValidT(T2))
+	if (!isValidT(TBottom) && isValidT(TTop))
 	{
-		//if (state_set_error_bit(ERR_T2))
-		//	Serial.println(F("Boiler sensor fail (T2)"));
-		if (isValidT(T3))
-			T2 = T3;
+		TBottom = TTop;
 	}
-	//else
-	//{
-	//	if (state_clear_error_bit(ERR_T2))
-	//		Serial.println(F("Boiler sensor restored (T2)"));
-	//}
 
 	if (!isValidT(TF))
 	{
 		burnerOff();
-		//if (state_set_error_bit(ERR_TF))
-		//{
-		//	burnerOff();
-		//	Serial.println(F("Furnace sensor fail (TF)"));
-		//}
 	}
-	//else
-	//{
-	//	if (state_clear_error_bit(ERR_TF))
-	//		Serial.println(F("Furnace sensor restored (TF)"));
-	//}
 
-	int TBoiler = T3;
-	if (T2 > T3)
-		TBoiler = T2;
+	int TBoiler = TTop;
+	if (TBottom > TTop)
+		TBoiler = TBottom;
 
 	////////////////// End of Read sensor data
 
-	bool isSolarOk = CheckSolarPanels(TSolar);
+	bool isSolarOk = CheckSolarPanels(TSolar, publishError);
 
-	CheckBoilerTank(TBoiler);
+	CheckBoilerTank(TBoiler, publishError);
 
-	if (isSolarOk && isValidT(TSolar) && isValidT(T2) && TSolar > boilerSettings.CollectorMinimumSwitchOnT) // T2 = Tank bottom
+	if (isSolarOk && isValidT(TSolar) && isValidT(TBottom) && TSolar > boilerSettings.CollectorMinimumSwitchOnT) // T2 = Tank bottom
 	{
-		if (!isSolarPumpOn() && (TSolar >= T2 + boilerSettings.CollectorSwitchOnTempDiff))
+		if (!isSolarPumpOn() && (TSolar >= TBottom + boilerSettings.CollectorSwitchOnTempDiff))
 		{
 			solarPumpOn();
 		}
 		else
 		{
-			if (isSolarPumpOn() && (TSolar < T2 + boilerSettings.CollectorSwitchOffTempDiff))
+			if (isSolarPumpOn() && (TSolar < TBottom + boilerSettings.CollectorSwitchOffTempDiff))
 			{
 				solarPumpOff();
 			}
 		}
 	}
 
-	if (!isBoilerTankOverheated && isValidT(T3)) // T3 = Tank top
+	if (!isBoilerTankOverheated && isValidT(TTop)) // T3 = Tank top
 	{
 		if (boilerSettings.Mode == BOILER_MODE_SUMMER_POOL || boilerSettings.Mode == BOILER_MODE_SUMMER_POOL_AWAY)
 		{
-			if (T3 >= boilerSettings.PoolSwitchOnT)
+			if (TTop >= boilerSettings.PoolSwitchOnT)
 				circPumpPumpOn();
-			else if (T3 < boilerSettings.PoolSwitchOffT)
+			else if (TTop < boilerSettings.PoolSwitchOffT)
 				circPumpPumpOff();
 		}
 	}
 }
 
-bool CheckSolarPanels(int TSolar)
+bool CheckSolarPanels(int TSolar, bool &publishError)
 {
-	bool publish = false;
-
 	if (isValidT(TSolar))
 	{
 		// Is solar collector too hot?
@@ -225,7 +213,7 @@ bool CheckSolarPanels(int TSolar)
 			if (!warning_EMOF_IsActivated)
 			{
 				warning_EMOF_IsActivated = true;
-				publish = true;
+				publishError = true;
 				Serial.println(F("EMOF activated"));
 			}
 			return false;
@@ -235,7 +223,7 @@ bool CheckSolarPanels(int TSolar)
 			if (warning_EMOF_IsActivated)
 			{
 				warning_EMOF_IsActivated = false;
-				publish = true;
+				publishError = true;
 				Serial.println(F("EMOF deactivated"));
 			}
 		}
@@ -247,7 +235,7 @@ bool CheckSolarPanels(int TSolar)
 			if (!warning_CFR_IsActivated)
 			{
 				warning_CFR_IsActivated = true;
-				publish = true;
+				publishError = true;
 				Serial.println(F("CFR activated"));
 			}
 			return false;
@@ -256,26 +244,21 @@ bool CheckSolarPanels(int TSolar)
 		if (warning_CFR_IsActivated)
 		{
 			warning_CFR_IsActivated = false;
-			publish = true;
+			publishError = true;
 			Serial.println(F("CFR deactivated"));
 		}
 	}
 
-	if (publish)
-		PublishBoilerSettings();
-
 	return true;
 }
 
-void CheckBoilerTank(int TBoiler)
+void CheckBoilerTank(int TBoiler, bool &publishError)
 {
 	if (!isValidT(TBoiler))
 	{
 		burnerOff();
 		return;
 	}
-
-	bool publish = false;
 
 	bool turnBurnerOn = true;
 	if (TBoiler >= boilerSettings.MaxTankT ||
@@ -287,7 +270,7 @@ void CheckBoilerTank(int TBoiler)
 		if (!warning_SMX_IsActivated)
 		{
 			warning_SMX_IsActivated = true;
-			publish = true;
+			publishError = true;
 			Serial.println(F("SMX activated"));
 		}
 	}
@@ -296,7 +279,7 @@ void CheckBoilerTank(int TBoiler)
 		if (warning_SMX_IsActivated)
 		{
 			warning_SMX_IsActivated = false;
-			publish = true;
+			publishError = true;
 			Serial.println(F("SMX deactivated"));
 		}
 	}
@@ -316,7 +299,7 @@ void CheckBoilerTank(int TBoiler)
 		if (!warning_MAXT_IsActivated)
 		{
 			warning_MAXT_IsActivated = true;
-			publish = true;
+			publishError = true;
 			Serial.println(F("95 degree in tank activated"));
 		}
 		return;
@@ -326,22 +309,18 @@ void CheckBoilerTank(int TBoiler)
 	if (warning_MAXT_IsActivated)
 	{
 		warning_MAXT_IsActivated = false;
-		publish = true;
+		publishError = true;
 		Serial.println(F("95 degree in tank deactivated"));
 	}
 	if (turnBurnerOn)
 		burnerOn();
-	
-	if (publish)
-		PublishBoilerSettings();
 }
 
 // Returns temperature multiplied by 10, or T_UNDEFINED
 int readSolarPaneT()
 {
-	#define RREF 4300.0 // https://learn.adafruit.com/adafruit-max31865-rtd-pt100-amplifier/arduino-code
+	const float RREF = 4300.0;// https://learn.adafruit.com/adafruit-max31865-rtd-pt100-amplifier/arduino-code
 
-	int T;
 	float temperature = solarSensor.temperature(1000.0, RREF);
 
 	//Serial.print("RTD value: "); Serial.println(lastReadSolarPanelRTD);
@@ -351,11 +330,7 @@ int readSolarPaneT()
 	// Check and print any faults
 	uint8_t fault = solarSensor.readFault();
 	if (fault) {
-		T = T_UNDEFINED;
 		solarSensor.clearFault();
-
-		PublishErrorCode(fault);
-		//TODO Publish faults
 
 		Serial.print(F("Fault 0x")); Serial.println(fault, HEX);
 		if (fault & MAX31865_FAULT_HIGHTHRESH) {
@@ -376,11 +351,9 @@ int readSolarPaneT()
 		if (fault & MAX31865_FAULT_OVUV) {
 			Serial.println(F("Under/Over voltage"));
 		}
-	}
-	else
-	{
-		T = round(temperature) * 10; // 1 degree precision is enough
+
+		return T_UNDEFINED;
 	}
 
-	return T;
+	return round(temperature) * 10; // 1 degree precision is enough
 }

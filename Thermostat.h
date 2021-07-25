@@ -57,6 +57,8 @@ const byte PIN_PRESSURE_SENSOR = A0;
 const byte PIN_MANUAL_MODE_LED = 3;
 const byte PIN_SD_CARD_SELECT = 4;
 const byte PIN_MAX31865_SELECT = 5;
+const byte PIN_ETHERNET_SS = 10;
+
 const byte PIN_BLINKING_LED = LED_BUILTIN; // 13 in MEGA
 const byte PIN_ONE_WIRE_BUS = 8;	// 4.7K pullup
 
