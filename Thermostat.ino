@@ -112,8 +112,9 @@ void setup()
 
 	wdt_enable(WDTO_8S);
 
-	ProcessTemperatureSensors();
-	ProcessHelioPressure();
+  bool publishError = false;
+	ProcessTemperatureSensors(publishError);
+	ProcessHelioPressure(publishError);
 
 	wdt_disable();
 
