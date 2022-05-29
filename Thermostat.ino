@@ -44,6 +44,8 @@ byte heaterRelayPins[HEATER_RELAY_COUNT] = {
 
 byte heaterRelayState[HEATER_RELAY_COUNT];
 
+bool poolPumpIsOn;
+
 byte boilerRelayPins[BOILER_RELAY_COUNT] = {
 	PIN_BL_SOLAR_PUMP,
 	PIN_BL_CIRC_PUMP,
@@ -64,7 +66,7 @@ void setup()
 
 	Serial.begin(115200);
 	Serial.println();
-	Serial.println(F("Initializing.. ver. 3.0.2"));
+	Serial.println(F("Initializing.. ver. 3.0.3"));
 
 	pinMode(PIN_BLINKING_LED, OUTPUT);
 	digitalWrite(PIN_BLINKING_LED, LOW); // Turn on led at start
@@ -112,7 +114,7 @@ void setup()
 
 	wdt_enable(WDTO_8S);
 
-  bool publishError = false;
+	bool publishError = false;
 	ProcessTemperatureSensors(publishError);
 	ProcessHelioPressure(publishError);
 
@@ -357,4 +359,15 @@ bool _isBoilerRelayOn(byte id)
 	if (id < BOILER_RELAY_COUNT)
 		return !digitalRead(boilerRelayPins[id]);
 	return false;
+}
+
+void processPoolPumpState(byte id, bool value)
+{
+	if (id != 0)
+		return;
+
+	poolPumpIsOn = value;
+
+	bool publishError = false;
+	ProcessTemperatureSensors(publishError);
 }

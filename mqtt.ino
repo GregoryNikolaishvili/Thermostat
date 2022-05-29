@@ -123,7 +123,7 @@ void PublishAllStates() {
 	for (byte id = 0; id < BOILER_RELAY_COUNT; id++)
 		PublishBoilerRelayState(id, _isBoilerRelayOn(id));
 
-  PublishHelioPressure();
+	PublishHelioPressure();
 
 	doLog = true;
 }
@@ -297,7 +297,7 @@ void PublishRoomSensorSettings()
 //
 //}
 
-void callback(char* topic, byte * payload, unsigned int len) {
+void callback(char* topic, byte* payload, unsigned int len) {
 
 
 	Serial.print(F("message arrived: topic='"));
@@ -352,6 +352,16 @@ void callback(char* topic, byte * payload, unsigned int len) {
 		addRoomT(id, value);
 
 		ProcessRoomSensor(id, true);
+		return;
+	}
+
+	// Data arrived from pool relays via AcuLog
+	if (strncmp(topic, "chac/ts/pl/", 11) == 0)
+	{
+		byte id = hexCharToByte(topic[11]);
+		bool value = payload[0] != '0';
+
+		processPoolPumpState(id, value);
 		return;
 	}
 

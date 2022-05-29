@@ -71,7 +71,7 @@ void CheckCirculatingPump()
 }
 
 // boiler & solar
-void ProcessTemperatureSensors(bool &publishError)
+void ProcessTemperatureSensors(bool& publishError)
 {
 	int TSolar = readSolarPaneT(); // Solar panel T
 
@@ -192,15 +192,23 @@ void ProcessTemperatureSensors(bool &publishError)
 	{
 		if (boilerSettings.Mode == BOILER_MODE_SUMMER_POOL || boilerSettings.Mode == BOILER_MODE_SUMMER_POOL_AWAY)
 		{
-			if (TTop >= boilerSettings.PoolSwitchOnT)
-				circPumpPumpOn();
-			else if (TTop < boilerSettings.PoolSwitchOffT)
+			if (!poolPumpIsOn)
+			{
 				circPumpPumpOff();
+			}
+			else
+			{
+				if (TTop >= boilerSettings.PoolSwitchOnT)
+					circPumpPumpOn();
+				else if (TTop < boilerSettings.PoolSwitchOffT)
+					circPumpPumpOff();
+			}
 		}
 	}
 }
 
-bool CheckSolarPanels(int TSolar, bool &publishError)
+
+bool CheckSolarPanels(int TSolar, bool& publishError)
 {
 	if (isValidT(TSolar))
 	{
@@ -251,7 +259,7 @@ bool CheckSolarPanels(int TSolar, bool &publishError)
 	return true;
 }
 
-void CheckBoilerTank(int TBoiler, bool &publishError)
+void CheckBoilerTank(int TBoiler, bool& publishError)
 {
 	if (!isValidT(TBoiler))
 	{
@@ -318,20 +326,20 @@ void CheckBoilerTank(int TBoiler, bool &publishError)
 // Returns temperature multiplied by 10, or T_UNDEFINED
 int readSolarPaneT()
 {
-  //const float RREF = 4300.0;// https://learn.adafruit.com/adafruit-max31865-rtd-pt100-amplifier/arduino-code
-  //const float RREF = 4265.0;// https://learn.adafruit.com/adafruit-max31865-rtd-pt100-amplifier/arduino-code
-  const float RREF = 4000.0;// https://learn.adafruit.com/adafruit-max31865-rtd-pt100-amplifier/arduino-code
-  
-  float Rt = solarSensor.readRTD();
-  Rt /= 32768;
-  Rt *= RREF;
+	//const float RREF = 4300.0;// https://learn.adafruit.com/adafruit-max31865-rtd-pt100-amplifier/arduino-code
+	//const float RREF = 4265.0;// https://learn.adafruit.com/adafruit-max31865-rtd-pt100-amplifier/arduino-code
+	const float RREF = 4000.0;// https://learn.adafruit.com/adafruit-max31865-rtd-pt100-amplifier/arduino-code
 
-  Serial.println(Rt);
-  
-  float temperature = solarSensor.temperature(1000.0, RREF);
+	float Rt = solarSensor.readRTD();
+	Rt /= 32768;
+	Rt *= RREF;
 
-Serial.println(temperature);
-  
+	Serial.println(Rt);
+
+	float temperature = solarSensor.temperature(1000.0, RREF);
+
+	Serial.println(temperature);
+
 	//Serial.print("RTD value: "); Serial.println(lastReadSolarPanelRTD);
 	//Serial.print(F("RTD Resistance = ")); Serial.println(RREF * lastReadSolarPanelRTD / 32768, 8);
 	//Serial.print(F("RTD Temperature = ")); Serial.println(temperature);
