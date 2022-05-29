@@ -193,12 +193,14 @@ void oncePerSecond()
 
 void oncePer5Second()
 {
-	ReconnectMqtt();
+	//ReconnectMqtt();
 }
 
 void oncePer1Minute()
 {
 	ProcessRoomSensors();
+
+  ReconnectMqtt();
 
 	if (secondTicks > 0) // do not publish on startup
 		PublishAllStates();

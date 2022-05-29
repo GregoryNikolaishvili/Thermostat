@@ -334,11 +334,11 @@ int readSolarPaneT()
 	Rt /= 32768;
 	Rt *= RREF;
 
-	Serial.println(Rt);
+	//Serial.println(Rt);
 
 	float temperature = solarSensor.temperature(1000.0, RREF);
 
-	Serial.println(temperature);
+	//Serial.println(temperature);
 
 	//Serial.print("RTD value: "); Serial.println(lastReadSolarPanelRTD);
 	//Serial.print(F("RTD Resistance = ")); Serial.println(RREF * lastReadSolarPanelRTD / 32768, 8);
