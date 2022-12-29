@@ -338,10 +338,10 @@ void callback(char* topic, byte* payload, unsigned int len) {
 		buffer[len] = 0;
 		int value = atoi(buffer); // T in decimal
 
-		//Serial.print(F("Room sensor data: Id="));
-		//Serial.print(id);
-		//Serial.print(F(", T="));
-		//Serial.println(value);
+//		Serial.print(F("Room sensor data: Id="));
+//		Serial.print(id);
+//		Serial.print(F(", T="));
+//		Serial.println(value);
 
 		addRoomT(id, value);
 

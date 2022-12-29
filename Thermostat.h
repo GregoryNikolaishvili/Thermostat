@@ -29,7 +29,7 @@ const byte HEATER_RELAY_COUNT = 16;
 const byte BOILER_RELAY_COUNT = 4;
 const byte BOILER_SENSOR_COUNT = 4;
 
-const byte MAX_ROOM_SENSORS = 30;
+const byte MAX_ROOM_SENSORS = 24;
 
 inline boolean isValidT(int T) { return T != T_UNDEFINED; }
 
