@@ -66,6 +66,9 @@ release
 debug
 # Folder config file
 Desktop.ini
+.vs
+__vm/
+
 
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
@@ -89,3 +92,9 @@ __vm/Configuration.Debug.vmps.xml
 __vm/.Thermostat.vsarduino.h
 __vm/Compile.vmps.xml
 /.vs/Thermostat
+__vm/Compile.vmps.xml
+__vm/.Thermostat.vsarduino.h
+__vm/Compile.vmps.xml
+__vm/.Thermostat.vsarduino.h
+__vm/Compile.vmps.xml
+__vm/.Thermostat.vsarduino.h

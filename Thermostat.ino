@@ -1,3 +1,30 @@
+﻿//
+//ქვედა რიგი მარცხნიდან მარჯვნივ(სულ 8)
+//
+//1. სამზარეულო
+//2. ზალა 1 სამზარეულოსკენ როა
+//3. ზალა 1 ეზოსკენ რომ იყურება
+//4. კიბე ქვედა
+//5. ქვედა ტუალეტი
+//6. ზალა 1 კუთხეში
+//7.  ბარის შესასვლელი
+//8. ბარის ტუალეტი
+//
+//ზედა რიგი მარცხნიდან მარჯვნივ(სულ 12)
+//
+//1. ზედა კიბეები
+//2. ზედა ტუალეტის საშრობი
+//3. ზედა ტუალეტის რადიატორი
+//4. ზალა 2 დიდი
+//5. ზალა 2 პატარა
+//6. გიო 1 და 2
+//7. ნანა
+//8. გიო 3
+//9. გია
+//10. ბარი(ბასეინისკენ)
+//11. კინოთეატრი ქვედა ეზოსკენ
+//12.  კინოთეატრი უკნისკენ(ფიჭვი)
+
 #define REQUIRESALARMS false // FOR DS18B20 library
 
 #include "Thermostat.h"
@@ -59,6 +86,8 @@ unsigned long secondTicks = 0;
 //unsigned int thermostatControllerState = 0;
 
 //uint16_t lastReadSolarPanelRTD;
+
+BoilerSettingStructure boilerSettings;
 
 void setup()
 {
@@ -157,7 +186,7 @@ void oncePerHalfSecond(void)
 	// Blinking
 	static uint8_t blinkingLedState = LOW;
 
-	blinkingLedState = !blinkingLedState;
+	blinkingLedState = ~blinkingLedState;
 	digitalWrite(PIN_BLINKING_LED, blinkingLedState);
 
 	if ((halfSecondTicks + 4) % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0) // 2 second before processing temperatures
@@ -200,7 +229,7 @@ void oncePer1Minute()
 {
 	ProcessRoomSensors();
 
-  ReconnectMqtt();
+	ReconnectMqtt();
 
 	if (secondTicks > 0) // do not publish on startup
 		PublishAllStates();
@@ -249,7 +278,6 @@ void processHeaterRelays()
 	}
 }
 
-
 void solarPumpOn()
 {
 	_boilerRelayOn(BL_SOLAR_PUMP);
@@ -265,10 +293,7 @@ boolean isSolarPumpOn()
 	return _isBoilerRelayOn(BL_SOLAR_PUMP);
 }
 
-
 AlarmID_t circPumpStartingAlarm = 0xFF;
-
-extern BoilerSettingStructure boilerSettings;
 
 boolean circPumpStarting()
 {
@@ -312,7 +337,6 @@ void circPumpPumpOff()
 		_boilerRelayOff(BL_CIRC_PUMP);
 }
 
-
 void burnerOn() //TODO: never used
 {
 	_boilerRelayOn(BL_FURNACE);
@@ -330,7 +354,6 @@ void _boilerRelaySet(byte id, bool state)
 	else
 		_boilerRelayOff(id);
 }
-
 
 void _boilerRelayOn(byte id)
 {

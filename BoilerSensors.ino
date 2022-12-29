@@ -2,9 +2,6 @@ Adafruit_MAX31865 solarSensor = Adafruit_MAX31865(PIN_MAX31865_SELECT);
 
 Temperature* boilerSensorsValues[BOILER_SENSOR_COUNT];
 
-
-BoilerSettingStructure boilerSettings;
-
 bool isBoilerTankOverheated = false;
 
 // Warning conditions
@@ -17,7 +14,6 @@ bool warning_SolarSensorFail_IsActivated = false;
 bool warning_TankBottomSensorFail_IsActivated = false;
 bool warning_TankTopSensorFail_IsActivated = false;
 bool warning_HelioPressure_IsActivated = false;
-
 
 void InitTemperatureSensors()
 {
@@ -136,7 +132,6 @@ void ProcessTemperatureSensors(bool& publishError)
 		}
 	}
 
-
 	TSolar = setBoilerT(T_SOLAR_PANEL_T, TSolar);
 	TBottom = setBoilerT(T_TANK_BOTTOM, TBottom);
 	TTop = setBoilerT(T_TANK_TOP, TTop);
@@ -207,14 +202,13 @@ void ProcessTemperatureSensors(bool& publishError)
 	}
 }
 
-
 bool CheckSolarPanels(int TSolar, bool& publishError)
 {
 	if (isValidT(TSolar))
 	{
 		// Is solar collector too hot?
 		if (TSolar >= boilerSettings.CollectorEmergencySwitchOffT || // 140
-			(warning_EMOF_IsActivated && TSolar >= boilerSettings.CollectorEmergencySwitchOnT)) // 120 
+			(warning_EMOF_IsActivated && TSolar >= boilerSettings.CollectorEmergencySwitchOnT)) // 120
 		{
 			solarPumpOff();
 			if (!warning_EMOF_IsActivated)

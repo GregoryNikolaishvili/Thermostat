@@ -80,14 +80,11 @@ void PublishAlive()
 }
 
 void ReconnectMqtt() {
-
 	if (!mqttClient.connected()) {
-
 		Serial.print(F("Connecting to MQTT broker..."));
 
 		// Attempt to connect
 		if (mqttClient.connect("boiler", "hub/controller/boiler", 1, true, "{\"state\":\"disconnected\"}")) {
-
 			Serial.println(F("connected"));
 
 			// Once connected, publish an announcement...
@@ -199,7 +196,6 @@ void PublishHelioPressure()
 //	PublishMqtt("cha/ts/error", buffer, 4, true);
 //}
 
-
 void PublishTime()
 {
 	if (!mqttClient.connected()) return;
@@ -298,8 +294,6 @@ void PublishRoomSensorSettings()
 //}
 
 void callback(char* topic, byte* payload, unsigned int len) {
-
-
 	Serial.print(F("message arrived: topic='"));
 	Serial.print(topic);
 	Serial.print(F("', length="));
@@ -335,7 +329,7 @@ void callback(char* topic, byte* payload, unsigned int len) {
 	if (len == 0)
 		return;
 
-	// Data arrived from room sensors (acurite) via AcuHack 
+	// Data arrived from room sensors (acurite) via AcuHack
 	if (strncmp(topic, "chac/ts/state/rs/", 17) == 0)
 	{
 		int id = readHex(topic + 17, 4);
@@ -465,7 +459,6 @@ void callback(char* topic, byte* payload, unsigned int len) {
 		return;
 	}
 
-
 	if (strcmp(topic, "chac/ts/settime2") == 0)
 	{
 		char* data = (char*)payload;
@@ -480,7 +473,6 @@ void callback(char* topic, byte* payload, unsigned int len) {
 
 	if (strcmp(topic, "chac/ts/settime") == 0)
 	{
-
 		char* data = (char*)payload;
 		int yr, month, day;
 		int hr, min, sec;
