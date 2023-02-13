@@ -94,7 +94,7 @@ void setup()
 
 	Serial.begin(115200);
 	Serial.println();
-	Serial.println(F("Initializing.. ver. 3.0.3"));
+	Serial.println(F("Initializing.. ver. 3.0.4"));
 
 	pinMode(PIN_BLINKING_LED, OUTPUT);
 	digitalWrite(PIN_BLINKING_LED, LOW); // Turn on led at start
@@ -221,22 +221,22 @@ void oncePerSecond()
 
 void oncePer5Second()
 {
-//	static byte heaterId = 0;
-//  for (byte i = 0; i < HEATER_RELAY_COUNT; i++)
-//  {
-//    digitalWrite(heaterRelayPins[i], LOW);
-//  }
-//    
-//   digitalWrite(heaterRelayPins[0], HIGH);
-//
-//  if (heaterId == 0) 
-//    Serial.println(" ------------------------------ ");
-//    Serial.println(heaterId + 1);
-//
-//  heaterId++;
-//  if (heaterId == HEATER_RELAY_COUNT)
-//    heaterId = 0;
-	//ReconnectMqtt();
+	//	static byte heaterId = 0;
+	//  for (byte i = 0; i < HEATER_RELAY_COUNT; i++)
+	//  {
+	//    digitalWrite(heaterRelayPins[i], LOW);
+	//  }
+	//
+	//   digitalWrite(heaterRelayPins[0], HIGH);
+	//
+	//  if (heaterId == 0)
+	//    Serial.println(" ------------------------------ ");
+	//    Serial.println(heaterId + 1);
+	//
+	//  heaterId++;
+	//  if (heaterId == HEATER_RELAY_COUNT)
+	//    heaterId = 0;
+		//ReconnectMqtt();
 }
 
 void oncePer1Minute()
@@ -272,21 +272,9 @@ byte heaterRelayGetValue(byte id)
 
 void processHeaterRelays()
 {
-	static unsigned long windowStartTime = 0;
-
-	if (secondTicks - windowStartTime >= 100) // time to shift the Relay Window
-		windowStartTime = secondTicks;
-
-  Serial.println(secondTicks - windowStartTime);
-
 	for (byte id = 0; id < HEATER_RELAY_COUNT; id++)
 	{
-    Serial.print("Heater relay #");
-    Serial.print(id+1);
-    Serial.print(", State=");
-    Serial.println(heaterRelayState[id]);
-  
-		if (heaterRelayState[id] > (int)(secondTicks - windowStartTime))
+		if (heaterRelayState[id])
 		{
 			digitalWrite(heaterRelayPins[id], LOW);  // OPEN
 		}
@@ -295,6 +283,30 @@ void processHeaterRelays()
 			digitalWrite(heaterRelayPins[id], HIGH); // CLOSE
 		}
 	}
+
+	//static unsigned long windowStartTime = 0;
+
+	//if (secondTicks - windowStartTime >= 100) // time to shift the Relay Window
+	//	windowStartTime = secondTicks;
+
+	//Serial.println(secondTicks - windowStartTime);
+
+	//for (byte id = 0; id < HEATER_RELAY_COUNT; id++)
+	//{
+	//	Serial.print("Heater relay #");
+	//	Serial.print(id + 1);
+	//	Serial.print(", State=");
+	//	Serial.println(heaterRelayState[id]);
+
+	//	if (heaterRelayState[id] > (int)(secondTicks - windowStartTime))
+	//	{
+	//		digitalWrite(heaterRelayPins[id], LOW);  // OPEN
+	//	}
+	//	else
+	//	{
+	//		digitalWrite(heaterRelayPins[id], HIGH); // CLOSE
+	//	}
+	//}
 }
 
 void solarPumpOn()
