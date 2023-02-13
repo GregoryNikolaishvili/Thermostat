@@ -1,4 +1,3 @@
-﻿//
 //ქვედა რიგი მარცხნიდან მარჯვნივ(სულ 8)
 //
 //1. სამზარეულო
@@ -222,6 +221,21 @@ void oncePerSecond()
 
 void oncePer5Second()
 {
+//	static byte heaterId = 0;
+//  for (byte i = 0; i < HEATER_RELAY_COUNT; i++)
+//  {
+//    digitalWrite(heaterRelayPins[i], LOW);
+//  }
+//    
+//   digitalWrite(heaterRelayPins[0], HIGH);
+//
+//  if (heaterId == 0) 
+//    Serial.println(" ------------------------------ ");
+//    Serial.println(heaterId + 1);
+//
+//  heaterId++;
+//  if (heaterId == HEATER_RELAY_COUNT)
+//    heaterId = 0;
 	//ReconnectMqtt();
 }
 
@@ -263,15 +277,22 @@ void processHeaterRelays()
 	if (secondTicks - windowStartTime >= 100) // time to shift the Relay Window
 		windowStartTime = secondTicks;
 
+  Serial.println(secondTicks - windowStartTime);
+
 	for (byte id = 0; id < HEATER_RELAY_COUNT; id++)
 	{
+    Serial.print("Heater relay #");
+    Serial.print(id+1);
+    Serial.print(", State=");
+    Serial.println(heaterRelayState[id]);
+  
 		if (heaterRelayState[id] > (int)(secondTicks - windowStartTime))
 		{
-			digitalWrite(heaterRelayPins[id], LOW);
+			digitalWrite(heaterRelayPins[id], LOW);  // OPEN
 		}
 		else
 		{
-			digitalWrite(heaterRelayPins[id], HIGH);
+			digitalWrite(heaterRelayPins[id], HIGH); // CLOSE
 		}
 	}
 }
