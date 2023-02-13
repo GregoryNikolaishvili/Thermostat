@@ -115,7 +115,7 @@ void setup()
 	// Init relays
 	for (byte i = 0; i < HEATER_RELAY_COUNT; i++)
 	{
-		heaterRelayState[i] = 100;
+		heaterRelayState[i] = 100; // Open all thermo valves to 100% (NO)
 		digitalWrite(heaterRelayPins[i], LOW);
 		pinMode(heaterRelayPins[i], OUTPUT);
 	}
@@ -260,20 +260,18 @@ void processHeaterRelays()
 {
 	static unsigned long windowStartTime = 0;
 
-	if (secondTicks - windowStartTime > 100) // time to shift the Relay Window
-		windowStartTime += 100;
+	if (secondTicks - windowStartTime >= 100) // time to shift the Relay Window
+		windowStartTime = secondTicks;
 
 	for (byte id = 0; id < HEATER_RELAY_COUNT; id++)
 	{
-		int output = heaterRelayState[id];
-
-		if (output < (int)(secondTicks - windowStartTime))
+		if (heaterRelayState[id] > (int)(secondTicks - windowStartTime))
 		{
-			digitalWrite(heaterRelayPins[id], HIGH);
+			digitalWrite(heaterRelayPins[id], LOW);
 		}
 		else
 		{
-			digitalWrite(heaterRelayPins[id], LOW);
+			digitalWrite(heaterRelayPins[id], HIGH);
 		}
 	}
 }
