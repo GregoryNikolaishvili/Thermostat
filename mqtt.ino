@@ -380,7 +380,7 @@ void callback(char* topic, byte* payload, unsigned int len) {
 	// Set settings of room sensors
 	if (strncmp(topic, "chac/ts/settings2/rs/", 21) == 0)
 	{
-		char* p = (char*)topic;
+  	char* p = (char*)topic;
 		p += 21;
 		int id = readHex(p, 4);
 
@@ -389,7 +389,7 @@ void callback(char* topic, byte* payload, unsigned int len) {
 		Serial.print(F("New room sensor settings. Id="));
 		Serial.println(id);
 
-		byte roomSensorIdx = -1;
+		int roomSensorIdx = -1;
 		for (byte i = 0; i < roomSensorSettingsCount; i++)
 		{
 			if (roomSensorSettings[i].id == id)
@@ -408,6 +408,8 @@ void callback(char* topic, byte* payload, unsigned int len) {
 
 		if (roomSensorIdx >= 0)
 		{
+      Serial.print("Setting settings for idx = ");
+      Serial.println(roomSensorIdx);
 			roomSensorSettings[roomSensorIdx].id = id;
 			roomSensorSettings[roomSensorIdx].targetT = readHexT(p);
 			if (len > 4)
