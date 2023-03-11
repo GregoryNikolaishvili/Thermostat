@@ -1,8 +1,8 @@
 int sunriseMin;
 int sunsetMin;
 
-const byte DEF_SETTINGS_VERSION_BOILER = 0x0D;
-const byte DEF_SETTINGS_VERSION_ROOM_SENSORS = 0x0B;
+const byte DEF_SETTINGS_VERSION_BOILER = 0x01;
+const byte DEF_SETTINGS_VERSION_ROOM_SENSORS = 0x00;
 
 const char OFF_SUNRISE = 'S';
 const char OFF_TIME = 'T';
@@ -11,7 +11,7 @@ const char OFF_DURATION = 'D';
 
 void readSettings()
 {
-	boilerSettings.Mode = 'N';
+	boilerSettings.Mode = 'W';
 	boilerSettings.CollectorSwitchOnTempDiff = 80; // 2...20
 	boilerSettings.CollectorSwitchOffTempDiff = 40; // 0 ... EMOF - 2
 
