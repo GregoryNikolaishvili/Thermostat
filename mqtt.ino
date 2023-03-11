@@ -338,10 +338,10 @@ void callback(char* topic, byte* payload, unsigned int len) {
 		buffer[len] = 0;
 		int value = atoi(buffer); // T in decimal
 
-//		Serial.print(F("Room sensor data: Id="));
-//		Serial.print(id);
-//		Serial.print(F(", T="));
-//		Serial.println(value);
+		//		Serial.print(F("Room sensor data: Id="));
+		//		Serial.print(id);
+		//		Serial.print(F(", T="));
+		//		Serial.println(value);
 
 		addRoomT(id, value);
 
@@ -416,6 +416,13 @@ void callback(char* topic, byte* payload, unsigned int len) {
 				roomSensorSettings[roomSensorIdx].relayId = readHex(p, 2);
 			}
 			saveRoomSensorSettings(true);
+
+			for (byte i = 0; i < HEATER_RELAY_COUNT; i++)
+			{
+				heaterRelayState[i] = 100; // Open all thermo valves to 100% (NO)
+				digitalWrite(heaterRelayPins[i], LOW);
+			}
+
 			ProcessRoomSensors();
 		}
 		return;
