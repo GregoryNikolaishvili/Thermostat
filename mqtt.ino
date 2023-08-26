@@ -1,13 +1,18 @@
 //#include "utility/w5100.h"
 
-byte mac[] = { 0x54, 0x34, 0x41, 0x30, 0x30, 0x08 };
-IPAddress ip(192, 168, 1, 8);
+const char* MqttUserName = "cha";
+const char* MqttPassword = "BatoBato02@";
+
+IPAddress ip(192, 168, 68, 8);
+IPAddress gateway(192, 168, 68, 1);
+IPAddress subnet(255, 255, 252, 0);
 
 EthernetClient ethClient;
-PubSubClient mqttClient("192.168.1.23", 1883, callback, ethClient);     // Initialize a MQTT mqttClient instance
+PubSubClient mqttClient("192.168.68.23", 1883, callback, ethClient);     // Initialize a MQTT mqttClient instance
+
+byte mac[] = { 0x54, 0x34, 0x41, 0x30, 0x30, 0x08 };
 
 #define MQTT_BUFFER_SIZE 256
-
 char buffer[MQTT_BUFFER_SIZE];
 
 bool doLog = true;
@@ -16,7 +21,7 @@ void InitEthernet()
 {
 	Serial.println(F("Starting ethernet.."));
 
-	Ethernet.begin(mac, ip);
+	Ethernet.begin(mac, ip, gateway, gateway, subnet);
 	ethClient.setConnectionTimeout(2000);
 
 	Ethernet.setRetransmissionTimeout(250);
@@ -84,7 +89,7 @@ void ReconnectMqtt() {
 		Serial.print(F("Connecting to MQTT broker..."));
 
 		// Attempt to connect
-		if (mqttClient.connect("boiler", "hub/controller/boiler", 1, true, "{\"state\":\"disconnected\"}")) {
+		if (mqttClient.connect("boiler", MqttUserName, MqttPassword, "hub/controller/boiler", 1, true, "{\"state\":\"disconnected\"}")) {
 			Serial.println(F("connected"));
 
 			// Once connected, publish an announcement...
@@ -380,7 +385,7 @@ void callback(char* topic, byte* payload, unsigned int len) {
 	// Set settings of room sensors
 	if (strncmp(topic, "chac/ts/settings2/rs/", 21) == 0)
 	{
-  	char* p = (char*)topic;
+		char* p = (char*)topic;
 		p += 21;
 		int id = readHex(p, 4);
 
@@ -408,8 +413,8 @@ void callback(char* topic, byte* payload, unsigned int len) {
 
 		if (roomSensorIdx >= 0)
 		{
-      Serial.print("Setting settings for idx = ");
-      Serial.println(roomSensorIdx);
+			Serial.print("Setting settings for idx = ");
+			Serial.println(roomSensorIdx);
 			roomSensorSettings[roomSensorIdx].id = id;
 			roomSensorSettings[roomSensorIdx].targetT = readHexT(p);
 			if (len > 4)
