@@ -24,6 +24,9 @@
 //11. კინოთეატრი ქვედა ეზოსკენ
 //12.  კინოთეატრი უკნისკენ(ფიჭვი)
 
+#include <ArduinoJson.hpp>
+#include <ArduinoJson.h>
+
 #define REQUIRESALARMS false // FOR DS18B20 library
 
 #include "Thermostat.h"
@@ -94,7 +97,7 @@ void setup()
 
 	Serial.begin(115200);
 	Serial.println();
-	Serial.println(F("Initializing.. ver. 3.0.6"));
+	Serial.println(F("Initializing.. ver. 3.1.0"));
 
 	pinMode(PIN_BLINKING_LED, OUTPUT);
 	digitalWrite(PIN_BLINKING_LED, LOW); // Turn on led at start
@@ -241,8 +244,6 @@ void oncePer5Second()
 
 void oncePer1Minute()
 {
-	ProcessRoomSensors();
-
 	ReconnectMqtt();
 
 	if (secondTicks > 0) // do not publish on startup
@@ -256,6 +257,7 @@ void heaterRelaySetValue(byte id, byte value)
 		if (heaterRelayState[id] != value)
 		{
 			heaterRelayState[id] = value;
+
 			PublishHeaterRelayState(id, value);
 		}
 	}
@@ -336,14 +338,16 @@ void circPumpPumpOn()
 	if (circPumpStarting() || _isBoilerRelayOn(BL_CIRC_PUMP))
 		return;
 
-	if (boilerSettings.Mode == BOILER_MODE_WINTER || boilerSettings.Mode == BOILER_MODE_WINTER_AWAY) // needs 5 min delay
+	if (boilerSettings.Mode == BOILER_MODE_WINTER) // needs 5 min delay
 	{
 		circPumpStartingAlarm = Alarm.alarmOnce(elapsedSecsToday(now()) + CIRCULATING_PUMP_ON_DELAY_MINUTES * 60, circPumpOnTimer, "", 0);
 
 		PublishBoilerRelayState(BL_CIRC_PUMP, false); // will publish standby mode
 	}
 	else
+	{
 		_boilerRelayOn(BL_CIRC_PUMP);
+	}
 }
 
 void circPumpOnTimer(int tag, int tag2)
@@ -365,7 +369,9 @@ void circPumpPumpOff()
 		PublishBoilerRelayState(BL_CIRC_PUMP, false);
 	}
 	else
+	{
 		_boilerRelayOff(BL_CIRC_PUMP);
+	}
 }
 
 void burnerOn() //TODO: never used

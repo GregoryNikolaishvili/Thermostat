@@ -1,5 +1,3 @@
-//#include "utility/w5100.h"
-
 const char* MqttUserName = "cha";
 const char* MqttPassword = "BatoBato02@";
 
@@ -42,21 +40,6 @@ void ProcessMqtt()
 {
 	mqttClient.loop();
 }
-
-//void PublishMqtt(char* topic, char* message, boolean retained)
-//{
-//	int len = strlen(message);
-//
-//	Serial.print(F("Publish. topic="));
-//	Serial.print(topic);
-//	Serial.print(F(", length="));
-//	Serial.print(len);
-//
-//	Serial.print(F(", payload="));
-//	Serial.println(message);
-//
-//	mqttClient.publish(topic, (byte*)message, len, retained);
-//}
 
 void PublishMqtt(const char* topic, const char* message, int len, boolean retained)
 {
@@ -101,7 +84,6 @@ void ReconnectMqtt() {
 			mqttClient.publish("hubcommand/gettime2", "chac/ts/settime2", false); // request time
 
 			PublishBoilerSettings();
-			PublishRoomSensorSettings();
 			PublishAllStates();
 		}
 		else {
@@ -129,22 +111,6 @@ void PublishAllStates() {
 
 	doLog = true;
 }
-
-//void PublishRoomSensorT(byte idx)
-//{
-//	if (!mqttClient.connected()) return;
-//
-//	int id = roomSensorsIds[idx];
-//	int T = getRoomT(id);
-//
-//	char* topic = "cha/ROOM_SENSOR/????";
-//	setHexInt16(topic, id, 16);
-//
-//	setHexT(buffer, T, 0);
-//	setHexInt16(buffer, now() - roomSensorsLastTime[idx], 4);
-//
-//	PublishMqtt(topic, buffer, 8, false);
-//}
 
 void PublishHeaterRelayState(byte id, byte value)
 {
@@ -252,43 +218,6 @@ void PublishBoilerSettings()
 	PublishMqtt(topic, buffer, idx, true);
 }
 
-void PublishRoomSensorSettings()
-{
-	if (!mqttClient.connected()) return;
-
-	const char* topic = "cha/ts/settings/rs";
-
-	int idx = 0;
-	idx = setHexByte(buffer, roomSensorSettingsCount, idx); // count 2 bytes
-	for (byte i = 0; i < roomSensorSettingsCount; i++)
-	{
-		idx = setHexInt16(buffer, roomSensorSettings[i].id, idx); // id 4 bytes
-		idx = setHexT(buffer, roomSensorSettings[i].targetT, idx); // targetT 4 bytes
-		idx = setHexByte(buffer, roomSensorSettings[i].relayId, idx); // relayId 2 bytes
-	}
-
-	PublishMqtt(topic, buffer, idx, true);
-}
-
-//void PublishRoomSensorNamesAndOrder()
-//{
-//	if (!mqttClient.connected()) return;
-//
-//	const char* topic = "cha/ts/names/rs";
-//
-//	int length = eeprom_read_word((uint16_t *)STORAGE_ADDRESS_DATA);
-//	//Serial.print("load name & order data. len=");
-//	//Serial.println(length);
-//
-//	for (int i = 0; i < length; i++)
-//	{
-//		byte b = eeprom_read_byte((const uint8_t *)(STORAGE_ADDRESS_DATA + 2 + i));
-//		buffer[i] = b;
-//	}
-//
-//	PublishMqtt(topic, buffer, length, true);
-//}
-
 //void PublishAlert(char*message)
 //{
 //	PublishMqtt("cha/alert", message, strlen(message), false);
@@ -334,26 +263,6 @@ void callback(char* topic, byte* payload, unsigned int len) {
 	if (len == 0)
 		return;
 
-	// Data arrived from room sensors (acurite) via AcuHack
-	if (strncmp(topic, "chac/ts/state/rs/", 17) == 0)
-	{
-		int id = readHex(topic + 17, 4);
-
-		strncpy(buffer, (char*)payload, len);
-		buffer[len] = 0;
-		int value = atoi(buffer); // T in decimal
-
-		//		Serial.print(F("Room sensor data: Id="));
-		//		Serial.print(id);
-		//		Serial.print(F(", T="));
-		//		Serial.println(value);
-
-		addRoomT(id, value);
-
-		ProcessRoomSensor(id, true);
-		return;
-	}
-
 	// Data arrived from pool relays via AcuLog
 	if (strncmp(topic, "chac/ts/pl/", 11) == 0)
 	{
@@ -373,65 +282,13 @@ void callback(char* topic, byte* payload, unsigned int len) {
 		return;
 	}
 
-	if (strncmp(topic, "chac/ts/state/hr/", 17) == 0)
+	if (strncmp(topic, "chac/ts/state/hr/", 17) == 0) // Heating
 	{
 		byte id = hexCharToByte(topic[16]);
 		bool value = payload[0] != '0';
 
-		heaterRelaySetValue(id, value ? 100 : 0);
-		return;
-	}
-
-	// Set settings of room sensors
-	if (strncmp(topic, "chac/ts/settings2/rs/", 21) == 0)
-	{
-		char* p = (char*)topic;
-		p += 21;
-		int id = readHex(p, 4);
-
-		p = (char*)payload;
-
-		Serial.print(F("New room sensor settings. Id="));
-		Serial.println(id);
-
-		int roomSensorIdx = -1;
-		for (byte i = 0; i < roomSensorSettingsCount; i++)
-		{
-			if (roomSensorSettings[i].id == id)
-			{
-				roomSensorIdx = i;
-				break;
-			}
-		}
-
-		// setting not found
-		if (roomSensorIdx < 0 && roomSensorSettingsCount < MAX_ROOM_SENSORS)
-		{
-			roomSensorIdx = roomSensorSettingsCount++;
-			roomSensorSettings[roomSensorIdx].relayId = 0; // Inactive
-		}
-
-		if (roomSensorIdx >= 0)
-		{
-			Serial.print("Setting settings for idx = ");
-			Serial.println(roomSensorIdx);
-			roomSensorSettings[roomSensorIdx].id = id;
-			roomSensorSettings[roomSensorIdx].targetT = readHexT(p);
-			if (len > 4)
-			{
-				p += 4;
-				roomSensorSettings[roomSensorIdx].relayId = readHex(p, 2);
-			}
-			saveRoomSensorSettings(true);
-
-			for (byte i = 0; i < HEATER_RELAY_COUNT; i++)
-			{
-				heaterRelayState[i] = 100; // Open all thermo valves to 100% (NO)
-				digitalWrite(heaterRelayPins[i], LOW);
-			}
-
-			ProcessRoomSensors();
-		}
+		if (!isBoilerTankOverheated)
+			heaterRelaySetValue(id, value ? 100 : 0);
 		return;
 	}
 

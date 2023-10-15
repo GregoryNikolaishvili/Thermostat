@@ -19,7 +19,6 @@
     <None Include="BoilerSensors.ino" />
     <None Include="DS18B20.ino" />
     <None Include="mqtt.ino" />
-    <None Include="RoomSensors.ino" />
     <None Include="Settings.ino" />
     <None Include="Utils.ino" />
     <None Include="HelioPressure.ino" />

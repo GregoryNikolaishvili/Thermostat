@@ -2,12 +2,10 @@ int sunriseMin;
 int sunsetMin;
 
 const byte DEF_SETTINGS_VERSION_BOILER = 0x01;
-const byte DEF_SETTINGS_VERSION_ROOM_SENSORS = 0x00;
 
 const char OFF_SUNRISE = 'S';
 const char OFF_TIME = 'T';
 const char OFF_DURATION = 'D';
-
 
 void readSettings()
 {
@@ -41,43 +39,18 @@ void readSettings()
 	boilerSettings.BackupHeatingTS3_SwitchOnT = 500;
 	boilerSettings.BackupHeatingTS3_SwitchOffT = 550;
 
-	for (byte i = 0; i < MAX_ROOM_SENSORS; i++)
-	{
-		roomSensorSettings[i].id = 0;
-		roomSensorSettings[i].targetT = 220; // 22 degrees
-		roomSensorSettings[i].relayId = 0; // Inactive
-	}
-
 	// boiler
-	byte v = eeprom_read_byte((uint8_t *)STORAGE_ADDRESS_BOILER_SETTINGS);
+	byte v = eeprom_read_byte((uint8_t*)STORAGE_ADDRESS_BOILER_SETTINGS);
 
 	if (v != DEF_SETTINGS_VERSION_BOILER)
 	{
-		eeprom_update_byte((uint8_t *)STORAGE_ADDRESS_BOILER_SETTINGS, DEF_SETTINGS_VERSION_BOILER);
+		eeprom_update_byte((uint8_t*)STORAGE_ADDRESS_BOILER_SETTINGS, DEF_SETTINGS_VERSION_BOILER);
 		saveBoilerSettings(false);
 	}
 	else
 	{
 		eeprom_read_block((void*)&boilerSettings, (void*)(STORAGE_ADDRESS_BOILER_SETTINGS + 1), sizeof(boilerSettings));
 		boilerSettingsChanged(false);
-	}
-
-	// room sensors
-	v = eeprom_read_byte((uint8_t *)STORAGE_ADDRESS_ROOM_SENSOR_SETTINGS);
-	if (v != DEF_SETTINGS_VERSION_ROOM_SENSORS)
-	{
-		eeprom_update_byte((uint8_t *)STORAGE_ADDRESS_ROOM_SENSOR_SETTINGS, DEF_SETTINGS_VERSION_ROOM_SENSORS);
-		saveRoomSensorSettings(false);
-
-		//saveData("0000", 4);
-	}
-	else
-	{
-		roomSensorSettingsCount = eeprom_read_byte((uint8_t *)(STORAGE_ADDRESS_ROOM_SENSOR_SETTINGS + 1));
-
-		eeprom_read_block((void*)&roomSensorSettings, (void*)(STORAGE_ADDRESS_ROOM_SENSOR_SETTINGS + 2), sizeof(roomSensorSettings));
-
-		roomSensorSettingsChanged(false);
 	}
 }
 
@@ -88,35 +61,11 @@ void saveBoilerSettings(bool publish)
 	boilerSettingsChanged(publish);
 }
 
-void saveRoomSensorSettings(bool publish)
-{
-	eeprom_update_byte((uint8_t *)(STORAGE_ADDRESS_ROOM_SENSOR_SETTINGS + 1), roomSensorSettingsCount);
-	eeprom_update_block((const void*)&roomSensorSettings, (void*)(STORAGE_ADDRESS_ROOM_SENSOR_SETTINGS + 2), sizeof(roomSensorSettings));
-
-	roomSensorSettingsChanged(publish);
-}
-
-
 void boilerSettingsChanged(bool publish)
 {
 	if (publish)
 		PublishBoilerSettings();
 }
-
-void roomSensorSettingsChanged(bool publish)
-{
-	if (publish)
-		PublishRoomSensorSettings();
-}
-
-//void saveData(const void* data, int length)
-//{
-//	if (length > 256)
-//		length = 256;
-//	eeprom_update_word((uint16_t *)STORAGE_ADDRESS_DATA, length);
-//	eeprom_update_block(data, (void*)(STORAGE_ADDRESS_DATA + 2), length);
-//}
-
 
 void resetAlarms(int tag, int tag2)
 {
@@ -171,7 +120,6 @@ void showNextEvent()
 		Serial.println(alarm->eventName);
 	}
 }
-
 
 //time_t getOnTime(OnOffSettingStructure* onOff)
 //{

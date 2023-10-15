@@ -2,7 +2,6 @@
 #include <Temperature.h>
 #include <Time.h>					// http://www.pjrc.com/teensy/td_libs_Time.html
 
-
 //Arduino Mega -->  MAX31865
 //    -------------------------- -
 //    CS:   pin 5    -->  CS
@@ -16,7 +15,7 @@ const int PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_SECONDS = 10;
 const int PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC = PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_SECONDS * 2;
 
 const int STORAGE_ADDRESS_BOILER_SETTINGS = 100;
-const int STORAGE_ADDRESS_ROOM_SENSOR_SETTINGS = 300;
+
 const int STORAGE_ADDRESS_DS18B20_ADDRESS_SETTINGS = 900;
 
 const unsigned int ERR_T1 = 64;
@@ -24,12 +23,10 @@ const unsigned int ERR_T2 = 128;
 const unsigned int ERR_T3 = 256;
 const unsigned int ERR_TF = 512; // Furnace
 
-
 const byte HEATER_RELAY_COUNT = 16;
+const byte USED_HEATER_RELAY_COUNT = 13;
 const byte BOILER_RELAY_COUNT = 4;
 const byte BOILER_SENSOR_COUNT = 4;
-
-const byte MAX_ROOM_SENSORS = 24;
 
 inline boolean isValidT(int T) { return T != T_UNDEFINED; }
 
@@ -37,10 +34,6 @@ const char BOILER_MODE_OFF = 'N';
 const char BOILER_MODE_SUMMER = 'S';
 const char BOILER_MODE_SUMMER_POOL = 'P';
 const char BOILER_MODE_WINTER = 'W';
-
-const char BOILER_MODE_SUMMER_AWAY = 's';
-const char BOILER_MODE_SUMMER_POOL_AWAY = 'p';
-const char BOILER_MODE_WINTER_AWAY = 'w';
 
 const byte BL_SOLAR_PUMP = 0;
 const byte BL_CIRC_PUMP = 1;
@@ -87,18 +80,10 @@ const byte PIN_BL_CIRC_PUMP = 40;
 const byte PIN_BL_OVEN_PUMP = 42;
 const byte PIN_BL_OVEN_FAN = 44;
 
-
 const byte PIN_BL_RESERVE1 = 39;
 const byte PIN_BL_RESERVE2 = 41;
 const byte PIN_BL_RESERVE3 = 43;
 const byte PIN_BL_RESERVE4 = 45;
-
-struct RoomSensorSettingStructure {
-	int id;
-	int targetT;
-	byte relayId;
-};
-
 
 struct BoilerSettingStructure {
 	char Mode;
@@ -109,7 +94,7 @@ struct BoilerSettingStructure {
 	int CollectorEmergencySwitchOffT; // EMOF, Collector maximum switch - off temperature 140 (110...200)
 	int CollectorEmergencySwitchOnT; // EMON, Collector	maximum switch - on temperature 120 (0...EMOF - 2)
 	int CollectorMinimumSwitchOnT; // CMN, Minimum temperature of collector, which must be exceeded so that the solar	pump is switched, 10, (-10..90)
- 	int CollectorAntifreezeT; // CFR, Antifreeze function activates the loading circuit between collector and store if the adjusted antifreeze function is underrun in order to protect the medium that it will not freeze, 4 (-10..10)
+	int CollectorAntifreezeT; // CFR, Antifreeze function activates the loading circuit between collector and store if the adjusted antifreeze function is underrun in order to protect the medium that it will not freeze, 4 (-10..10)
 	int MaxTankT; // SMX Maximum temperature of tank, 60
 	int AbsoluteMaxTankT; // Absolute Maximum temperature of tank, 95
 

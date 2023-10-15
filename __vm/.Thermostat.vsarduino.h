@@ -91,7 +91,6 @@ typedef void *__builtin_va_list;
 #include "BoilerSensors.ino"
 #include "DS18B20.ino"
 #include "HelioPressure.ino"
-#include "RoomSensors.ino"
 #include "Settings.ino"
 #include "Utils.ino"
 #include "mqtt.ino"

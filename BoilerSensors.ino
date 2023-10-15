@@ -31,7 +31,7 @@ void InitTemperatureSensors()
 
 void ReInitBoiler()
 {
-	if (boilerSettings.Mode != BOILER_MODE_WINTER && boilerSettings.Mode != BOILER_MODE_WINTER_AWAY)
+	if (boilerSettings.Mode != BOILER_MODE_WINTER)
 	{
 		for (byte id = 0; id < HEATER_RELAY_COUNT; id++)
 			heaterRelaySetValue(id, 100); // 100% open
@@ -39,8 +39,6 @@ void ReInitBoiler()
 		burnerOff();
 		return;
 	}
-
-	ProcessRoomSensors();
 }
 
 int getBoilerT(byte id)
@@ -58,13 +56,13 @@ int setBoilerT(byte id, int value)
 	return newValue;
 }
 
-void CheckCirculatingPump()
-{
-	if (checkAllHeaterRelaysAreOff())
-		circPumpPumpOff();
-	else
-		circPumpPumpOn();
-}
+//void CheckCirculatingPump()
+//{
+//	if (checkAllHeaterRelaysAreOff())
+//		circPumpPumpOff();
+//	else
+//		circPumpPumpOn();
+//}
 
 // boiler & solar
 void ProcessTemperatureSensors(bool& publishError)
@@ -185,7 +183,7 @@ void ProcessTemperatureSensors(bool& publishError)
 
 	if (!isBoilerTankOverheated && isValidT(TTop)) // T3 = Tank top
 	{
-		if (boilerSettings.Mode == BOILER_MODE_SUMMER_POOL || boilerSettings.Mode == BOILER_MODE_SUMMER_POOL_AWAY)
+		if (boilerSettings.Mode == BOILER_MODE_SUMMER_POOL)
 		{
 			if (!poolPumpIsOn)
 			{
@@ -219,14 +217,12 @@ bool CheckSolarPanels(int TSolar, bool& publishError)
 			}
 			return false;
 		}
-		else
+
+		if (warning_EMOF_IsActivated)
 		{
-			if (warning_EMOF_IsActivated)
-			{
-				warning_EMOF_IsActivated = false;
-				publishError = true;
-				Serial.println(F("EMOF deactivated"));
-			}
+			warning_EMOF_IsActivated = false;
+			publishError = true;
+			Serial.println(F("EMOF deactivated"));
 		}
 
 		// Is solar collector too cold?
@@ -285,8 +281,7 @@ void CheckBoilerTank(int TBoiler, bool& publishError)
 		}
 	}
 
-	if (TBoiler >= boilerSettings.AbsoluteMaxTankT
-		|| (warning_MAXT_IsActivated && TBoiler >= boilerSettings.AbsoluteMaxTankT - 50)) // 95 degree is absolute max for boiler tank
+	if (TBoiler >= boilerSettings.AbsoluteMaxTankT || (warning_MAXT_IsActivated && TBoiler >= boilerSettings.AbsoluteMaxTankT - 50)) // 95 degree is absolute max for boiler tank
 	{
 		isBoilerTankOverheated = true;
 		turnBurnerOn = false;
@@ -295,6 +290,7 @@ void CheckBoilerTank(int TBoiler, bool& publishError)
 		// Try to cool down boiler with all means
 		for (byte id = 0; id < HEATER_RELAY_COUNT; id++)
 			heaterRelaySetValue(id, 100); // 100% open
+
 		circPumpPumpOn(); // Turn on recirculating pump
 
 		if (!warning_MAXT_IsActivated)
@@ -368,3 +364,19 @@ int readSolarPaneT()
 
 	return round(temperature) * 10; // 1 degree precision is enough
 }
+
+//bool checkAllHeaterRelaysAreOff()
+//{
+//	bool allHeaterRelaysAreOff = true;
+//
+//	for (byte i = 0; i < USED_HEATER_RELAY_COUNT; i++)
+//	{
+//		if (heaterRelayGetValue(i) > 0)
+//		{
+//			allHeaterRelaysAreOff = false;
+//			break;
+//		}
+//	}
+//
+//	return allHeaterRelaysAreOff;
+//}
