@@ -24,9 +24,6 @@
 //11. კინოთეატრი ქვედა ეზოსკენ
 //12.  კინოთეატრი უკნისკენ(ფიჭვი)
 
-#include <ArduinoJson.hpp>
-#include <ArduinoJson.h>
-
 #define REQUIRESALARMS false // FOR DS18B20 library
 
 #include "Thermostat.h"
