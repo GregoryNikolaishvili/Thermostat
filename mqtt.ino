@@ -284,7 +284,7 @@ void callback(char* topic, byte* payload, unsigned int len) {
 
 	if (strncmp(topic, "chac/ts/state/hr/", 17) == 0) // Heating
 	{
-		byte id = hexCharToByte(topic[16]);
+		byte id = hexCharToByte(topic[17]);
 		bool value = payload[0] != '0';
 
 		if (!isBoilerTankOverheated)
