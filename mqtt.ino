@@ -266,7 +266,7 @@ void callback(char* topic, byte* payload, unsigned int len) {
 	// Data arrived from pool relays via AcuLog
 	if (strncmp(topic, "chac/ts/pl/", 11) == 0)
 	{
-		byte id = hexCharToByte(topic[11]);
+		byte id = hexCharToByte(topic[11]);	
 		bool value = payload[0] != '0';
 
 		processPoolPumpState(id, value);
