@@ -266,7 +266,7 @@ void callback(char* topic, byte* payload, unsigned int len) {
 	// Data arrived from pool relays via AcuLog
 	if (strncmp(topic, "chac/ts/pl/", 11) == 0)
 	{
-		byte id = hexCharToByte(topic[11]);	
+		byte id = hexCharToByte(topic[11]);
 		bool value = payload[0] != '0';
 
 		processPoolPumpState(id, value);
@@ -275,7 +275,17 @@ void callback(char* topic, byte* payload, unsigned int len) {
 
 	if (strncmp(topic, "chac/ts/state/bl/", 17) == 0)
 	{
+		if (isBoilerTankOverheated)
+			return;
+
 		byte id = hexCharToByte(topic[17]);
+
+		if (id == BL_CIRC_PUMP && payload[0] == '2' && !_isBoilerRelayOn(id) && !circPumpStarting()) // Start recirculation pump with delay
+		{
+			circPumpPumpOn();
+			return;
+		}
+
 		bool value = payload[0] != '0';
 
 		_boilerRelaySet(id, value);
@@ -284,11 +294,13 @@ void callback(char* topic, byte* payload, unsigned int len) {
 
 	if (strncmp(topic, "chac/ts/state/hr/", 17) == 0) // Heating
 	{
+		if (isBoilerTankOverheated)
+			return;
+
 		byte id = hexCharToByte(topic[17]);
 		bool value = payload[0] != '0';
 
-		if (!isBoilerTankOverheated)
-			heaterRelaySetValue(id, value ? 100 : 0);
+		heaterRelaySetValue(id, value ? 100 : 0);
 		return;
 	}
 

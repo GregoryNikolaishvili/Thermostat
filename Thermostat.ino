@@ -94,7 +94,7 @@ void setup()
 
 	Serial.begin(115200);
 	Serial.println();
-	Serial.println(F("Initializing.. ver. 3.1.1"));
+	Serial.println(F("Initializing.. ver. 3.1.2"));
 
 	pinMode(PIN_BLINKING_LED, OUTPUT);
 	digitalWrite(PIN_BLINKING_LED, LOW); // Turn on led at start
@@ -249,7 +249,7 @@ void oncePer1Minute()
 
 void heaterRelaySetValue(byte id, byte value)
 {
- 	if (id < HEATER_RELAY_COUNT)
+	if (id < HEATER_RELAY_COUNT)
 	{
 		if (heaterRelayState[id] != value)
 		{
