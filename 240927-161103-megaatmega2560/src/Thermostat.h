@@ -1,11 +1,9 @@
+#ifndef __THERMOSTAT_H
+#define __THERMOSTAT_H
+
 #include <arduino.h>
 #include <Temperature.h>
-//#include <Time.h>					// http://www.pjrc.com/teensy/td_libs_Time.html
-
-// MQTT credentials
-const char* MQTT_BROKER = "192.168.68.23";
-const char* MQTT_USERNAME = "cha";
-const char* MQTT_PASSWORD = "BatoBato02@";
+#include <Time.h>					// http://www.pjrc.com/teensy/td_libs_Time.html
 
 //Arduino Mega -->  MAX31865
 //    -------------------------- -
@@ -26,18 +24,14 @@ const int STORAGE_ADDRESS_DS18B20_ADDRESS_SETTINGS = 900;
 const unsigned int ERR_T1 = 64;
 const unsigned int ERR_T2 = 128;
 const unsigned int ERR_T3 = 256;
-const unsigned int ERR_TF = 512;  // Furnace
+const unsigned int ERR_TF = 512; // Furnace
 
 const byte HEATER_RELAY_COUNT = 16;
 const byte USED_HEATER_RELAY_COUNT = 13;
 const byte BOILER_RELAY_COUNT = 4;
 const byte BOILER_SENSOR_COUNT = 4;
 
-const byte DEVICE_COUNT = (USED_HEATER_RELAY_COUNT + BOILER_RELAY_COUNT + BOILER_SENSOR_COUNT);
-
- inline boolean isValidT(int T) {
-   return T != T_UNDEFINED;
- }
+inline boolean isValidT(int T) { return T != T_UNDEFINED; }
 
 const char BOILER_MODE_OFF = 'N';
 const char BOILER_MODE_SUMMER = 'S';
@@ -61,8 +55,8 @@ const byte PIN_SD_CARD_SELECT = 4;
 const byte PIN_MAX31865_SELECT = 5;
 const byte PIN_ETHERNET_SS = 10;
 
-const byte PIN_BLINKING_LED = LED_BUILTIN;  // 13 in MEGA
-const byte PIN_ONE_WIRE_BUS = 8;            // 4.7K pullup
+const byte PIN_BLINKING_LED = LED_BUILTIN; // 13 in MEGA
+const byte PIN_ONE_WIRE_BUS = 8;	// 4.7K pullup
 
 const byte PIN_HR_1 = 22;
 const byte PIN_HR_2 = 24;
@@ -95,33 +89,35 @@ const byte PIN_BL_RESERVE3 = 43;
 const byte PIN_BL_RESERVE4 = 45;
 
 struct BoilerSettingStructure {
-  char Mode;
+	char Mode;
 
-  int CollectorSwitchOnTempDiff;
-  int CollectorSwitchOffTempDiff;
+	int CollectorSwitchOnTempDiff;
+	int CollectorSwitchOffTempDiff;
 
-  int CollectorEmergencySwitchOffT;  // EMOF, Collector maximum switch - off temperature 140 (110...200)
-  int CollectorEmergencySwitchOnT;   // EMON, Collector	maximum switch - on temperature 120 (0...EMOF - 2)
-  int CollectorMinimumSwitchOnT;     // CMN, Minimum temperature of collector, which must be exceeded so that the solar	pump is switched, 10, (-10..90)
-  int CollectorAntifreezeT;          // CFR, Antifreeze function activates the loading circuit between collector and store if the adjusted antifreeze function is underrun in order to protect the medium that it will not freeze, 4 (-10..10)
-  int MaxTankT;                      // SMX Maximum temperature of tank, 60
-  int AbsoluteMaxTankT;              // Absolute Maximum temperature of tank, 95
+	int CollectorEmergencySwitchOffT; // EMOF, Collector maximum switch - off temperature 140 (110...200)
+	int CollectorEmergencySwitchOnT; // EMON, Collector	maximum switch - on temperature 120 (0...EMOF - 2)
+	int CollectorMinimumSwitchOnT; // CMN, Minimum temperature of collector, which must be exceeded so that the solar	pump is switched, 10, (-10..90)
+	int CollectorAntifreezeT; // CFR, Antifreeze function activates the loading circuit between collector and store if the adjusted antifreeze function is underrun in order to protect the medium that it will not freeze, 4 (-10..10)
+	int MaxTankT; // SMX Maximum temperature of tank, 60
+	int AbsoluteMaxTankT; // Absolute Maximum temperature of tank, 95
 
-  int PoolSwitchOnT;
-  int PoolSwitchOffT;
+	int PoolSwitchOnT;
+	int PoolSwitchOffT;
 
-  int BackupHeatingTS1_Start;
-  int BackupHeatingTS1_End;
-  int BackupHeatingTS1_SwitchOnT;
-  int BackupHeatingTS1_SwitchOffT;
+	int BackupHeatingTS1_Start;
+	int BackupHeatingTS1_End;
+	int BackupHeatingTS1_SwitchOnT;
+	int BackupHeatingTS1_SwitchOffT;
 
-  int BackupHeatingTS2_Start;
-  int BackupHeatingTS2_End;
-  int BackupHeatingTS2_SwitchOnT;
-  int BackupHeatingTS2_SwitchOffT;
+	int BackupHeatingTS2_Start;
+	int BackupHeatingTS2_End;
+	int BackupHeatingTS2_SwitchOnT;
+	int BackupHeatingTS2_SwitchOffT;
 
-  int BackupHeatingTS3_Start;
-  int BackupHeatingTS3_End;
-  int BackupHeatingTS3_SwitchOnT;
-  int BackupHeatingTS3_SwitchOffT;
+	int BackupHeatingTS3_Start;
+	int BackupHeatingTS3_End;
+	int BackupHeatingTS3_SwitchOnT;
+	int BackupHeatingTS3_SwitchOffT;
 };
+
+#endif
