@@ -1,7 +1,7 @@
 #ifndef _PROCESSOR_H
 #define _PROCESSOR_H
 
-void initHeaterRelays();
+void initThermostat();
 void ProcessTemperatureSensors();
 
 #endif

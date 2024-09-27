@@ -1,6 +1,7 @@
 #ifndef _PRESSURE_READER_H
 #define _PRESSURE_READER_H
 
+#include <ProjectDefines.h>
 #include <Arduino.h>
 #include <ArduinoHA.h>
 #include <MovingAverageFilter.h>

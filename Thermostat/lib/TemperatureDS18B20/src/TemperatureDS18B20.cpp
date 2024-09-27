@@ -106,7 +106,7 @@ float TemperatureDS18B20::getTemperature(byte id)
       initialize();
     }
   }
-  return T_UNDEFINED;
+  return NAN;
 }
 
 void TemperatureDS18B20::readDS18B20SensorsData()

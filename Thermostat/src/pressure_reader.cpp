@@ -11,7 +11,7 @@ PressureReader::PressureReader(HASensorNumber &pressureSensor)
 
 void PressureReader::processPressureSensor()
 {
-  #ifndef SIMULATION_MODE
+#ifndef SIMULATION_MODE
   int value = analogRead(PIN_PRESSURE_SENSOR);
   // Sensor output voltage
   float V = value * 5.00 / 1024; // 5.00 is reference voltage
@@ -30,9 +30,9 @@ void PressureReader::processPressureSensor()
   //  Serial.println(pressure10);
 
   int newValue = _pressureAvg->process(value);
-  #else
+#else
   int newValue = _pressureAvg->process(25);
-  #endif
+#endif
   _pressureSensor->setValue(newValue);
 }
 

@@ -1,6 +1,7 @@
 #ifndef _SOLAR_TEMPERATURE_READER_H
 #define _SOLAR_TEMPERATURE_READER_H
 
+#include <ProjectDefines.h>
 #include <ArduinoHA.h>
 #include <Adafruit_MAX31865.h> // https://github.com/adafruit/Adafruit_MAX31865
 #include <ArduinoJson.h>

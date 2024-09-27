@@ -3,6 +3,7 @@
 
 //#define REQUIRESALARMS false
 
+#include <ProjectDefines.h>
 #include <Arduino.h>
 #include <DallasTemperature.h>
 
@@ -12,9 +13,9 @@ typedef struct
   byte oneWireId;
 } __attribute__((__packed__)) DS18B20SensorData;
 
-#ifndef T_UNDEFINED
-  #define T_UNDEFINED 999
-#endif
+// #ifndef T_UNDEFINED
+//   #define T_UNDEFINED 999
+// #endif
 
 #define MAX_DS1820_SENSORS 4
 
