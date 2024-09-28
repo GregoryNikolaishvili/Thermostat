@@ -23,10 +23,14 @@
 #define MQTT_PASSWORD "BatoBato02@"
 
 #ifndef SIMULATION_MODE
+
 void initNetwork(HADevice &device, EthernetClient &Client);
+
 #else
+
 void initNetwork(HADevice &device);
 bool reconnectWifi();
+
 #endif
 
 #endif

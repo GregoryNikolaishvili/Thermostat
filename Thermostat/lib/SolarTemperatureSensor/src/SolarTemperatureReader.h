@@ -4,14 +4,14 @@
 #include <ProjectDefines.h>
 #include <ArduinoHA.h>
 #include <Adafruit_MAX31865.h> // https://github.com/adafruit/Adafruit_MAX31865
-#include <ArduinoJson.h>
+#include <TinyJsonBuilder.h>
 
 class SolarTemperatureReader
 {
 public:
   SolarTemperatureReader(int8_t spi_cs);
 
-  float getSolarPaneTemperature(JsonDocument &jsonDoc);
+  float getSolarPaneTemperature(TinyJsonBuilder &jsonBuilder);
 
 private:
   Adafruit_MAX31865* _solarSensor;

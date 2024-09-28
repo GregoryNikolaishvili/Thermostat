@@ -1,5 +1,5 @@
-#ifndef _HASWITCHX_h
-#define _HASWITCHX_h
+#ifndef _HASWITCHX_H
+#define _HASWITCHX_H
 
 #include <ProjectDefines.h>
 #include <ArduinoHA.h>
@@ -11,7 +11,7 @@ public:
     
     bool isTurnedOn();
     void setOnOff(bool on);
-    void setDefaultState();
+    void setDefaultState(const bool force = false);
 
     inline byte getPin() const
     {

@@ -2,10 +2,10 @@
 
 #include <Adafruit_MAX31865.h>
 #include <SolarTemperatureReader.h>
-#include <ArduinoJson.h>
 #include <TimeAlarms.h>
 #include <HASwitchX.h>
 #include <HASettingX.h>
+#include <TinyJsonBuilder.h>
 
 const int TEMP_SENSOR_TANK_BOTTOM = 0;
 const int TEMP_SENSOR_TANK_TOP = 1;
@@ -16,12 +16,12 @@ AlarmID_t heatingCirculationPumpStartingAlarm = 0xFF;
 
 bool isTankOverheated = false;
 
-JsonDocument jsonDoc;
+// Define a buffer to hold the JSON string
+char jsonBuffer[256]; // Adjust size based on expected content
+TinyJsonBuilder jsonBuilder(jsonBuffer, sizeof(jsonBuffer));
 
-extern HASelect modeSelect;
-extern RoomTemperatureSensor roomSensors[];
-extern int MQTT_TEMPERATURE_SENSOR_COUNT;
-extern String pool_pump_state;
+extern HASelect *modeSelect;
+extern RoomTemperatureSensor *roomSensors[MQTT_TEMPERATURE_SENSOR_COUNT];
 
 // Warning conditions
 bool warning_EMOF_IsActivated = false;
@@ -29,43 +29,44 @@ bool warning_CFR_IsActivated = false;
 bool warning_SMX_IsActivated = false;
 bool warning_MAXT_IsActivated = false;
 
-SolarTemperatureReader solarT(PIN_MAX31865_SELECT);
+extern SolarTemperatureReader *solarT;
 extern TemperatureDS18B20 tankTemperatures;
 
-extern HASensorNumber solarTemperatureSensor;
-extern HASensorNumber tankTopTemperatureSensor;
-extern HASensorNumber tankBottomTemperatureSensor;
-extern HASensor errorStatus;
+extern HASensorNumber *solarTemperatureSensor;
+extern HASensorNumber *tankTopTemperatureSensor;
+extern HASensorNumber *tankBottomTemperatureSensor;
+extern HASensor *errorStatus;
 
-extern HASwitchX heatingRecirculatingPump;
-extern HASwitchX solarRecirculatingPump;
+extern HASwitchX *heatingRecirculatingPump;
+extern HASwitchX *solarRecirculatingPump;
 
-extern HASettingX settingCollectorSwitchOnTempDiff;
-extern HASettingX settingCollectorSwitchOffTempDiff;
-extern HASettingX settingCollectorEmergencySwitchOffT;
-extern HASettingX settingCollectorEmergencySwitchOnT;
-extern HASettingX settingCollectorMinimumSwitchOnT;
-extern HASettingX settingCollectorAntifreezeT;
-extern HASettingX settingMaxTankT;
-extern HASettingX settingAbsoluteMaxTankT;
-extern HASettingX settingPoolSwitchOnT;
-extern HASettingX settingPoolSwitchOffT;
+extern HASettingX *settingCollectorSwitchOnTempDiff;
+extern HASettingX *settingCollectorSwitchOffTempDiff;
+extern HASettingX *settingCollectorEmergencySwitchOffT;
+extern HASettingX *settingCollectorEmergencySwitchOnT;
+extern HASettingX *settingCollectorAntifreezeT;
+extern HASettingX *settingMaxTankT;
+extern HASettingX *settingAbsoluteMaxTankT;
+extern HASettingX *settingPoolSwitchOnT;
+extern HASettingX *settingPoolSwitchOffT;
+
+extern String pool_pump_state;
 
 static void heatingCirculationPumpOnTimer();
 
 static void solarPumpOn()
 {
-    solarRecirculatingPump.setOnOff(HIGH);
+    solarRecirculatingPump->setOnOff(HIGH);
 }
 
 void solarPumpOff()
 {
-    solarRecirculatingPump.setOnOff(LOW);
+    solarRecirculatingPump->setOnOff(LOW);
 }
 
 bool isSolarPumpOn()
 {
-    return solarRecirculatingPump.isTurnedOn();
+    return solarRecirculatingPump->isTurnedOn();
 }
 
 boolean isHeatingCirculationPumpStarting()
@@ -75,10 +76,10 @@ boolean isHeatingCirculationPumpStarting()
 
 static void heatingCirculationPumpOn()
 {
-    if (isHeatingCirculationPumpStarting() || heatingRecirculatingPump.isTurnedOn())
+    if (isHeatingCirculationPumpStarting() || heatingRecirculatingPump->isTurnedOn())
         return;
 
-    if (modeSelect.getCurrentState() == THERMOSTAT_MODE_WINTER) // needs 5 min delay
+    if (modeSelect->getCurrentState() == THERMOSTAT_MODE_WINTER) // needs 5 min delay
     {
         heatingCirculationPumpStartingAlarm = Alarm.alarmOnce(elapsedSecsToday(now()) + CIRCULATING_PUMP_ON_DELAY_MINUTES * 60, heatingCirculationPumpOnTimer);
 
@@ -86,7 +87,7 @@ static void heatingCirculationPumpOn()
     }
     else
     {
-        heatingRecirculatingPump.setOnOff(HIGH);
+        heatingRecirculatingPump->setOnOff(HIGH);
     }
 }
 
@@ -98,7 +99,7 @@ static void heatingCirculationPumpPumpOff()
         heatingCirculationPumpStartingAlarm = 0xFF;
     }
 
-    heatingRecirculatingPump.setOnOff(LOW);
+    heatingRecirculatingPump->setOnOff(LOW);
 }
 
 static void heatingCirculationPumpOnTimer()
@@ -116,7 +117,7 @@ static void AllHeaterRelaysOn()
 {
     for (int i = 0; i < MQTT_TEMPERATURE_SENSOR_COUNT; i++)
     {
-        HASwitchX *relay = roomSensors[i].relay;
+        HASwitchX *relay = roomSensors[i]->relay;
         if (relay != NULL)
         {
             relay->setOnOff(HIGH);
@@ -128,7 +129,7 @@ static void AllHeaterRelaysToDefault()
 {
     for (int i = 0; i < MQTT_TEMPERATURE_SENSOR_COUNT; i++)
     {
-        HASwitchX *relay = roomSensors[i].relay;
+        HASwitchX *relay = roomSensors[i]->relay;
         if (relay != NULL)
         {
             relay->setDefaultState();
@@ -138,23 +139,23 @@ static void AllHeaterRelaysToDefault()
 
 void initThermostat()
 {
-    if (modeSelect.getCurrentState() != THERMOSTAT_MODE_WINTER)
+    if (modeSelect->getCurrentState() != THERMOSTAT_MODE_WINTER)
     {
         AllHeaterRelaysToDefault();
         return;
     }
 }
 
-static bool CheckSolarPanels(int TSolar)
+static bool CheckSolarPanel(int TSolar, TinyJsonBuilder &jsonBuilder)
 {
     if (!isValidT(TSolar))
         return false;
 
     // Is solar collector too hot?
     if (
-        (TSolar >= settingCollectorEmergencySwitchOffT.getSettingValue()) // 140
+        (TSolar >= settingCollectorEmergencySwitchOffT->getSettingValue()) // 140
         ||
-        (warning_EMOF_IsActivated && TSolar >= settingCollectorEmergencySwitchOnT.getSettingValue()))
+        (warning_EMOF_IsActivated && TSolar >= settingCollectorEmergencySwitchOnT->getSettingValue()))
     {
         solarPumpOff();
 
@@ -162,20 +163,18 @@ static bool CheckSolarPanels(int TSolar)
             Serial.println(F("EMOF activated"));
         warning_EMOF_IsActivated = true;
 
-        jsonDoc["EMOF"] = "Maximum collector temperature protection active";
+        jsonBuilder.addKeyValue(F("EMOF"), F("Max collector temperature protection is active"));
         return false;
     }
 
     if (warning_EMOF_IsActivated)
     {
         warning_EMOF_IsActivated = false;
-
-        jsonDoc.remove("EMOF");
         Serial.println(F("EMOF deactivated"));
     }
 
     // Is solar collector too cold?
-    if (TSolar <= settingCollectorAntifreezeT.getSettingValue()) // 4
+    if (TSolar <= settingCollectorAntifreezeT->getSettingValue()) // 4
     {
         solarPumpOn();
 
@@ -185,28 +184,26 @@ static bool CheckSolarPanels(int TSolar)
             Serial.println(F("CFR activated"));
         }
 
-        jsonDoc["CFR"] = "Frost protection of collector active";
+        jsonBuilder.addKeyValue(F("CFR"), F("Frost protection of collector is active"));
         return false;
     }
 
     if (warning_CFR_IsActivated)
     {
         warning_CFR_IsActivated = false;
-
-        jsonDoc.remove("CFR");
         Serial.println(F("CFR deactivated"));
     }
 
     return true;
 }
 
-bool CheckTank(int TTank)
+bool CheckTank(int TTank, TinyJsonBuilder &jsonBuilder)
 {
     if (!isValidT(TTank))
         return false;
 
     // Is tank super hot?
-    int absoluteMaxT = settingAbsoluteMaxTankT.getSettingValue();
+    int absoluteMaxT = settingAbsoluteMaxTankT->getSettingValue();
     if (
         (TTank >= absoluteMaxT) // 95 degree is absolute max for boiler tank
         ||
@@ -220,20 +217,18 @@ bool CheckTank(int TTank)
             Serial.println(F("ABSMAXT activated"));
         warning_MAXT_IsActivated = true;
 
-        jsonDoc["ABSMAXT"] = "Absolute maximum tank temperature (95) protection active";
+        jsonBuilder.addKeyValue(F("ABSMAXT"), F("Absolute maximum tank temperature protection is active"));
         return false;
     }
 
     if (warning_MAXT_IsActivated)
     {
         warning_MAXT_IsActivated = false;
-
-        jsonDoc.remove("ABSMAXT");
         Serial.println(F("ABSMAXT deactivated"));
     }
 
     // Is tank too hot?
-    int maxTankT = settingMaxTankT.getSettingValue();
+    int maxTankT = settingMaxTankT->getSettingValue();
     if ((TTank >= maxTankT) ||
         (warning_SMX_IsActivated && TTank >= maxTankT - 5))
     {
@@ -241,15 +236,13 @@ bool CheckTank(int TTank)
             Serial.println(F("SMX activated"));
         warning_SMX_IsActivated = true;
 
-        jsonDoc["SMX"] = "Maximum tank temperature protection active";
+        jsonBuilder.addKeyValue(F("SMX"), F("Maximum tank temperature protection is active"));
         return false;
     }
 
     if (warning_SMX_IsActivated)
     {
         warning_SMX_IsActivated = false;
-
-        jsonDoc.remove("SMX");
         Serial.println(F("SMX deactivated"));
     }
 
@@ -259,9 +252,9 @@ bool CheckTank(int TTank)
 // boiler & solar
 void ProcessTemperatureSensors()
 {
-    jsonDoc.clear();
-
-    float TSolar = solarT.getSolarPaneTemperature(jsonDoc);
+    jsonBuilder.reset();
+    
+    float TSolar = solarT->getSolarPaneTemperature(jsonBuilder);
     float TBottom = tankTemperatures.getTemperature(TEMP_SENSOR_TANK_BOTTOM); // Tank bottom
     float TTop = tankTemperatures.getTemperature(TEMP_SENSOR_TANK_TOP);       // Tank top
 
@@ -269,23 +262,23 @@ void ProcessTemperatureSensors()
     TSolar = 60;
     TBottom = 30;
 #endif
-    //	Serial.print("T1 = "); Serial.println(TSolar);
-    //	Serial.print("T2 = "); Serial.println(T2);
-    //	Serial.print("T3 = "); Serial.println(T3);
+    //	Serial.print(F("T1 = ")); Serial.println(TSolar);
+    //	Serial.print(F("T2 = ")); Serial.println(T2);
+    //	Serial.print(F("T3 = ")); Serial.println(T3);
 
     if (!isValidT(TSolar))
     {
-        jsonDoc["SolarPanel"] = "Solar sensor temperature is invalid";
+        jsonBuilder.addKeyValue(F("SolarPanel"), F("Solar sensor temperature is invalid"));
     }
 
     if (!isValidT(TBottom))
     {
-        jsonDoc["TankBottom"] = "Tank bottom temperature is invalid";
+        jsonBuilder.addKeyValue(F("TankBottom"), F("Tank bottom temperature is invalid"));
     }
 
     if (!isValidT(TTop))
     {
-        jsonDoc["TankTop"] = "Tank top temperature is invalid";
+        jsonBuilder.addKeyValue(F("TankTop"), F("Tank top temperature is invalid"));
     }
 
     // Read sensor data
@@ -315,32 +308,29 @@ void ProcessTemperatureSensors()
 
     ////////////////// End of Read sensor data
 
-    bool isSolarOk = CheckSolarPanels(TSolar);
+    bool isSolarOk = CheckSolarPanel(TSolar, jsonBuilder);
 
-    CheckTank(TBoiler);
+    CheckTank(TBoiler, jsonBuilder);
 
-    if (jsonDoc.size() > 0)
+    if (!jsonBuilder.isEmpty())
     {
-        errorStatus.setValue("error");
-        String json;
-        serializeJson(jsonDoc, json);
-        errorStatus.setJsonAttributes(json.c_str());
-
-        jsonDoc.clear();
+        errorStatus->setValue("error");
+        errorStatus->setJsonAttributes(jsonBuilder.getJson());
+        jsonBuilder.reset();
     }
     else
     {
-        errorStatus.setValue("ok");
-        errorStatus.setJsonAttributes(nullptr);
+        errorStatus->setValue("ok");
+        errorStatus->setJsonAttributes(nullptr);
     }
 
-    if (isSolarOk && isValidT(TSolar) && isValidT(TBottom) && TSolar > settingCollectorMinimumSwitchOnT.getSettingValue()) // T2 = Tank bottom
+    if (isSolarOk && isValidT(TSolar) && isValidT(TBottom) && TSolar > SOLAR_COLLECTOR_CMN) // T2 = Tank bottom
     {
-        if (!isSolarPumpOn() && (TSolar >= TBottom + settingCollectorSwitchOnTempDiff.getSettingValue()))
+        if (!isSolarPumpOn() && (TSolar >= TBottom + settingCollectorSwitchOnTempDiff->getSettingValue()))
         {
             solarPumpOn();
         }
-        else if (isSolarPumpOn() && (TSolar < TBottom + settingCollectorSwitchOffTempDiff.getSettingValue()))
+        else if (isSolarPumpOn() && (TSolar < TBottom + settingCollectorSwitchOffTempDiff->getSettingValue()))
         {
             solarPumpOff();
         }
@@ -348,7 +338,7 @@ void ProcessTemperatureSensors()
 
     if ((!warning_SMX_IsActivated && !warning_EMOF_IsActivated) && isValidT(TTop))
     {
-        if (modeSelect.getCurrentState() == THERMOSTAT_MODE_SUMMER_POOL)
+        if (modeSelect->getCurrentState() == THERMOSTAT_MODE_SUMMER_POOL)
         {
             if (pool_pump_state != "On")
             {
@@ -356,11 +346,11 @@ void ProcessTemperatureSensors()
             }
             else
             {
-                if (TTop >= settingPoolSwitchOnT.getSettingValue())
+                if (TTop >= settingPoolSwitchOnT->getSettingValue())
                 {
                     heatingCirculationPumpOn();
                 }
-                else if (TTop < settingPoolSwitchOffT.getSettingValue())
+                else if (TTop < settingPoolSwitchOffT->getSettingValue())
                 {
                     heatingCirculationPumpPumpOff();
                 }
@@ -368,5 +358,5 @@ void ProcessTemperatureSensors()
         }
     }
 
-    solarTemperatureSensor.setValue(TSolar);
+    solarTemperatureSensor->setValue(TSolar);
 }

@@ -11,7 +11,7 @@
 class PressureReader
 {
 public:
-	PressureReader(HASensorNumber &pressureSensor);
+	PressureReader(HASensorNumber* pressureSensor);
 
 	void processPressureSensor();
 	float getPressure();

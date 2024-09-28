@@ -1,5 +1,5 @@
-#ifndef _HASETTING_h
-#define _HASETTING_h
+#ifndef _HASETTING_H
+#define _HASETTING_H
 
 #include <ProjectDefines.h>
 #include <ArduinoHA.h>
@@ -7,13 +7,18 @@
 class HASettingX : public HANumber
 {
 public:
-    HASettingX(const char *uniqueId, const char *name, int initialValue, int min, int max);
+    HASettingX(const char *uniqueId, const char *name, int16_t defaultValue, int16_t min, int16_t max, int16_t eepromAddress);
 
-    int getSettingValue();
-    void setInitialValue();
+    int16_t getSettingValue();
 
 private:
-    int _initialValue;
+    int16_t _defaultValue;
+    int16_t _eepromAddress;
+
+    int16_t readIntFromEEPROM(int16_t address);
+    void writeIntToEEPROM(int16_t address, int16_t value);
+
+    static void onNumberCommand(HANumeric number, HANumber *sender);
 };
 
 #endif

@@ -1,14 +1,14 @@
-#ifndef _HATARGETTPOOL_h
-#define _HATARGETTPOOL_h
+#ifndef _HATARGETTPOOL_H
+#define _HATARGETTPOOL_H
 
 #include <ProjectDefines.h>
 #include <ArduinoHA.h>
-#include <HATargetTemperatureX.h>
+#include <HASettingX.h>
 
-class HATargetTemperaturePoolX : public HATargetTemperatureX
+class HATargetTemperaturePoolX : public HASettingX
 {
 public:
-    HATargetTemperaturePoolX(const char *uniqueId, const char *name);
+    HATargetTemperaturePoolX(const char *uniqueId, const char *name, int16_t eepromAddress);
 };
 
 #endif

@@ -5,7 +5,7 @@ static void onRelayCommand(bool state, HASwitch *sender);
 HASwitchX::HASwitchX(const char *uniqueId, const char *name, byte pinId, bool isInverted)
     : HASwitch(uniqueId), _pinId(pinId), _isInverted(isInverted)
 {
-  setCurrentState(false);
+  setCurrentState(isInverted);
   setName(name);
   setIcon("mdi:pipe-valve");
   setDeviceClass("switch");
@@ -33,10 +33,10 @@ void HASwitchX::setOnOff(bool state)
   setState(state); // report state back to Home Assistant
 }
 
-void HASwitchX::setDefaultState()
+void HASwitchX::setDefaultState(const bool force)
 {
   digitalWrite(_pinId, HIGH);
-  setState(_isInverted); // report state back to Home Assistant
+  setState(_isInverted, force); // report state back to Home Assistant
 }
 
 static void onRelayCommand(bool state, HASwitch *sender)

@@ -45,7 +45,7 @@ void initNetwork(HADevice &device)
 	// Configures static IP address
 	if (!WiFi.config(ip, gateway, subnet))
 	{
-		Serial.println("STA Failed to configure");
+		Serial.println(F("STA Failed to configure"));
 	}
 	device.setUniqueId(mac, sizeof(mac));
 
@@ -60,7 +60,7 @@ void outputWifiInfo()
 	long rssi = WiFi.RSSI();
 	Serial.print("Signal strength (RSSI): ");
 	Serial.print(rssi);
-	Serial.println(" dBm");
+	Serial.println(F(" dBm"));
 	WiFi.printDiag(Serial);
 }
 

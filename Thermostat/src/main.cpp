@@ -24,13 +24,13 @@
 // 11. კინოთეატრი ქვედა ეზოსკენ
 // 12.  კინოთეატრი უკნისკენ(ფიჭვი)
 
-#include <ArduinoHA.h>
-
-// #define REQUIRESALARMS false // FOR DS18B20 library
-
+#include <ProjectDefines.h>
 #include "main.h"
+#include <SPI.h>
 #include "network.h"
 #include "pressure_reader.h"
+
+#include <ArduinoHA.h>
 
 #include <HASwitchX.h>
 #include <HATargetTemperatureX.h>
@@ -42,6 +42,10 @@
 
 #if defined(__AVR_ATmega2560__)
 #include <avr/wdt.h>
+#endif
+
+#if defined(ESP8266) || defined(ESP32)
+#include <EEPROM.h>
 #endif
 
 #include "processor.h"
@@ -58,94 +62,75 @@ WiFiClient client;
 HADevice device;
 HAMqtt mqtt(client, device, DEVICE_COUNT);
 
-HASelect modeSelect("mode");
+SolarTemperatureReader *solarT;
 
-// HASwitchX instances
-HASwitchX solarRecirculatingPump("solar_pump", "Solar pump", PIN_BL_SOLAR_PUMP, false);
-HASwitchX heatingRecirculatingPump("heating_pump", "Heating pump", PIN_BL_CIRC_PUMP, false);
+HASelect *modeSelect;
 
 // Home Assistant sensors
-HASensorNumber pressureSensor("solar_pressure_sensor", HASensorNumber::PrecisionP1);
-HASensorNumber solarTemperatureSensor("solar_temperature", HASensorNumber::PrecisionP0);
-HASensorNumber tankTopTemperatureSensor("tank_top_temperature", HASensorNumber::PrecisionP0);
-HASensorNumber tankBottomTemperatureSensor("tank_bottom_temperature", HASensorNumber::PrecisionP0);
-HASensorNumber roomTemperatureSensor("room_temperature", HASensorNumber::PrecisionP0);
 
-HASensor warningStatus("warning_state", HASensor::JsonAttributesFeature);
-HASensor errorStatus("error_state", HASensor::JsonAttributesFeature);
+HASensorNumber *pressureSensor;
+HASensorNumber *solarTemperatureSensor;
+HASensorNumber *tankTopTemperatureSensor;
+HASensorNumber *tankBottomTemperatureSensor;
+HASensorNumber *roomTemperatureSensor;
 
-HASwitchX heatingRelayStairs2("heating_relay_stairs_2", "ზედა კიბე", PIN_HR_1, false);
-HASwitchX heatingRelayWc2("heating_relay_wc_2", "ზედა WC", PIN_HR_2, false);
-HASwitchX heatingRelayHall2("heating_relay_hall_2", "ზალა 2", PIN_HR_3, false);
-HASwitchX heatingRelayGio("heating_relay_gio", "გიო", PIN_HR_4, false);
-HASwitchX heatingRelayNana("heating_relay_nana", "ნანა", PIN_HR_5, false);
-HASwitchX heatingRelayGio3("heating_relay_gio3", "გიო 3", PIN_HR_6, false);
-HASwitchX heatingRelayGia("heating_relay_gia", "გია", PIN_HR_7, false);
-HASwitchX heatingRelayBar("heating_relay_bar", "ბარი", PIN_HR_8, false);
-HASwitchX heatingRelayHT("heating_relay_ht", "კინო", PIN_HR_9, false);
-HASwitchX heatingRelayKitchen("heating_relay_kitchen", "სამზარეულო", PIN_HR_10, false);
-HASwitchX heatingRelayHall1("heating_relay_hall_1", "ზალა 1", PIN_HR_11, false);
-HASwitchX heatingRelayStairs1("heating_relay_stairs_1", "ქვედა კიბე", PIN_HR_12, false);
-HASwitchX heatingRelayWc1("heating_relay_wc_1", "ქვედა WC", PIN_HR_13, false);
+HASensor *errorStatus;
 
-// Define HATargetTemperatureX instances for each room
-HATargetTemperatureX targetTemperatureBar("target_temperature_bar", "ბარი");
-HATargetTemperatureX targetTemperatureHT("target_temperature_ht", "კინო");
-HATargetTemperatureX targetTemperatureGio("target_temperature_gio", "გიო");
-HATargetTemperatureX targetTemperatureGio3("target_temperature_gio3", "გიო 3");
-HATargetTemperatureX targetTemperatureKitchen("target_temperature_kitchen", "სამზარეულო");
-HATargetTemperatureX targetTemperatureHall1("target_temperature_hall_1", "ზალა 1");
-HATargetTemperatureX targetTemperatureKvetaStairs1("target_temperature_kveta_stairs_1", "ქვედა კიბე");
-HATargetTemperatureX targetTemperatureWC1("target_temperature_wc_1", "ქვედა WC");
-HATargetTemperatureX targetTemperatureStairs2("target_temperature_stairs_2", "ზედა კიბე");
-HATargetTemperatureX targetTemperatureWC2("target_temperature_wc_2", "ზედა WC");
-HATargetTemperatureX targetTemperatureGia("target_temperature_gia", "გია");
-HATargetTemperatureX targetTemperatureNana("target_temperature_nana", "ნანა");
-HATargetTemperatureX targetTemperatureHall2("target_temperature_hall_2", "ზალა 2");
-HATargetTemperaturePoolX targetTemperaturePool("target_temperature_pool", "Pool");
+// Declare pointers for HASwitchX instances
+HASwitchX *solarRecirculatingPump;
+HASwitchX *heatingRecirculatingPump;
 
-// Initialize RoomTemperatureSensor Array
-RoomTemperatureSensor roomSensors[] = {
-	{"home/temperature/gw2000b_indoor_temperature", 0.0, &targetTemperatureBar, &heatingRelayBar},
-	{"home/temperature/gw2000b_temperature_1", 0.0, &targetTemperatureHT, &heatingRelayHT},
-	{"home/temperature/gw2000b_temperature_3", 0.0, &targetTemperatureGio, &heatingRelayGio},
-	{"home/temperature/gw2000b_temperature_4", 0.0, &targetTemperatureGio3, &heatingRelayGio3},
+// Declare heating relay pointers
+HASwitchX *heatingRelayStairs2;
+HASwitchX *heatingRelayWc2;
+HASwitchX *heatingRelayHall2;
+HASwitchX *heatingRelayGio;
+HASwitchX *heatingRelayNana;
+HASwitchX *heatingRelayGio3;
+HASwitchX *heatingRelayGia;
+HASwitchX *heatingRelayBar;
+HASwitchX *heatingRelayHT;
+HASwitchX *heatingRelayKitchen;
+HASwitchX *heatingRelayHall1;
+HASwitchX *heatingRelayStairs1;
+HASwitchX *heatingRelayWc1;
 
-	{"home/temperature/gw2000a_temperature_1", 0.0, &targetTemperatureKitchen, &heatingRelayKitchen},
-	{"home/temperature/gw2000a_temperature_2", 0.0, &targetTemperatureHall1, &heatingRelayHall1},
-	{"home/temperature/gw2000a_temperature_3", 0.0, &targetTemperatureKvetaStairs1, &heatingRelayStairs1},
-	{"home/temperature/gw2000a_temperature_4", 0.0, &targetTemperatureWC1, &heatingRelayWc1},
-	{"home/temperature/gw2000a_temperature_5", 0.0, &targetTemperatureStairs2, &heatingRelayStairs2},
-	{"home/temperature/gw2000a_temperature_6", 0.0, &targetTemperatureWC2, &heatingRelayWc2},
-	{"home/temperature/gw2000a_temperature_7", 0.0, &targetTemperatureGia, &heatingRelayGia},
-	{"home/temperature/gw2000a_temperature_8", 0.0, &targetTemperatureNana, &heatingRelayNana},
-	{"home/temperature/gw2000a_indoor_temperature", 0.0, &targetTemperatureHall2, &heatingRelayHall2},
+// Declare HATargetTemperatureX pointers for each room
+HATargetTemperatureX *targetTemperatureBar;
+HATargetTemperatureX *targetTemperatureHT;
+HATargetTemperatureX *targetTemperatureGio;
+HATargetTemperatureX *targetTemperatureGio3;
+HATargetTemperatureX *targetTemperatureKitchen;
+HATargetTemperatureX *targetTemperatureHall1;
+HATargetTemperatureX *targetTemperatureKvetaStairs1;
+HATargetTemperatureX *targetTemperatureWC1;
+HATargetTemperatureX *targetTemperatureStairs2;
+HATargetTemperatureX *targetTemperatureWC2;
+HATargetTemperatureX *targetTemperatureGia;
+HATargetTemperatureX *targetTemperatureNana;
+HATargetTemperatureX *targetTemperatureHall2;
+HATargetTemperaturePoolX *targetTemperaturePool;
 
-	{"home/temperature/gw2000b_temperature_8", 0.0, &targetTemperaturePool, NULL},
-	{"home/temperature/gw2000b_outdoor_temperature", 0.0, NULL, NULL}};
+RoomTemperatureSensor *roomSensors[MQTT_TEMPERATURE_SENSOR_COUNT];
 
-// Number of temperature sensors
-int MQTT_TEMPERATURE_SENSOR_COUNT = sizeof(roomSensors) / sizeof(roomSensors[0]);
+// Declare pointers for HASettingX instances
+HASettingX *settingCollectorSwitchOnTempDiff;
+HASettingX *settingCollectorSwitchOffTempDiff;
+HASettingX *settingCollectorEmergencySwitchOffT; // EMOF
+HASettingX *settingCollectorEmergencySwitchOnT;	 // EMON
+HASettingX *settingCollectorAntifreezeT;		 // CFR
+HASettingX *settingMaxTankT;					 // SMX
+HASettingX *settingAbsoluteMaxTankT;			 // ABS
 
-// Declare instances of HASettingX for each setting
-HASettingX settingCollectorSwitchOnTempDiff("collector_switch_on_temp_diff", "Collector Switch-On Temperature Difference", 8, 2, 20);
-HASettingX settingCollectorSwitchOffTempDiff("collector_switch_off_temp_diff", "Collector Switch-Off Temperature Difference", 4, 2, 10);
-HASettingX settingCollectorEmergencySwitchOffT("collector_emergency_switch_off_t", "Collector Emergency Switch-Off Temperature", 140, 110, 150); // EMOF
-HASettingX settingCollectorEmergencySwitchOnT("collector_emergency_switch_on_t", "Collector Emergency Switch-On Temperature", 120, 103, 147);	 // EMON, Max set to (EMOF - 3)
-HASettingX settingCollectorMinimumSwitchOnT("collector_minimum_switch_on_t", "Collector Minimum Switch-On Temperature", 10, -1, 9);				 // CMN
-HASettingX settingCollectorAntifreezeT("collector_antifreeze_t", "Collector Antifreeze Temperature", 4, -1, 6);									 // CFR
-HASettingX settingMaxTankT("max_tank_temp", "Maximum Tank Temperature", 70, 60, 95);															 // SMX
-HASettingX settingAbsoluteMaxTankT("absolute_max_tank_temp", "Absolute Maximum Tank Temperature", 90, 80, 95);									 // ABS
-
-HASettingX settingPoolSwitchOnT("pool_switch_on_t", "Tank Temperature to Switch On Pool Heating", 55, 40, 70);
-HASettingX settingPoolSwitchOffT("pool_switch_off_t", "Tank Temperature to Switch Off Pool Heating", 50, 35, 65);
+HASettingX *settingPoolSwitchOnT;
+HASettingX *settingPoolSwitchOffT;
 
 const char *pool_pump_switch_topic = "home/switch/pool_pump";
 
 // Variable to store pool pump switch state
 String pool_pump_state = "off";
 
-PressureReader pressure = PressureReader(pressureSensor);
+PressureReader *pressure;
 TemperatureDS18B20 tankTemperatures(PIN_ONE_WIRE_BUS, STORAGE_ADDRESS_BOILER_SETTINGS);
 
 // Forward declarations
@@ -153,16 +138,215 @@ void onMessageReceived(const char *topic, const uint8_t *payload, uint16_t lengt
 void onConnected();
 void onModeSelectCommand(int8_t index, HASelect *sender);
 
+void createHaObjects()
+{
+	modeSelect = new HASelect("mode");
+	modeSelect->setIcon("mdi:auto-mode");
+	modeSelect->setName("Thermostat mode");
+	modeSelect->setOptions("Off;Winter;Summer;Summer & Pool");
+	modeSelect->onCommand(onModeSelectCommand);
+	modeSelect->setCurrentState(0);
+
+	// Instantiate HASwitchX objects using new()
+	solarRecirculatingPump = new HASwitchX("solar_pump", "Solar pump", PIN_BL_SOLAR_PUMP, false);
+	heatingRecirculatingPump = new HASwitchX("heating_pump", "Heating pump", PIN_BL_CIRC_PUMP, false);
+
+	pressureSensor = new HASensorNumber("solar_pressure_sensor", HASensorNumber::PrecisionP1);
+	pressureSensor->setName("Solar pressure");
+	pressureSensor->setUnitOfMeasurement("bar");
+	pressureSensor->setIcon("mdi:gauge");
+	pressureSensor->setDeviceClass("pressure");
+	pressureSensor->setStateClass("measurement");
+
+	pressure = new PressureReader(pressureSensor);
+
+	// Instantiate HASensorNumber objects using new()
+	solarTemperatureSensor = new HASensorNumber("solar_temperature", HASensorNumber::PrecisionP0);
+	tankTopTemperatureSensor = new HASensorNumber("tank_top_temperature", HASensorNumber::PrecisionP0);
+	tankBottomTemperatureSensor = new HASensorNumber("tank_bottom_temperature", HASensorNumber::PrecisionP0);
+	roomTemperatureSensor = new HASensorNumber("room_temperature", HASensorNumber::PrecisionP0);
+
+	solarTemperatureSensor->setName("Solar panel temperature");
+	solarTemperatureSensor->setUnitOfMeasurement("°C");
+	solarTemperatureSensor->setIcon("mdi:solar-panel-large");
+	solarTemperatureSensor->setDeviceClass("temperature");
+	solarTemperatureSensor->setStateClass("measurement");
+
+	tankTopTemperatureSensor->setName("Tank top temperature");
+	tankTopTemperatureSensor->setUnitOfMeasurement("°C");
+	tankTopTemperatureSensor->setIcon("mdi:propane-tank");
+	tankTopTemperatureSensor->setDeviceClass("temperature");
+	tankTopTemperatureSensor->setStateClass("measurement");
+
+	tankBottomTemperatureSensor->setName("Tank bottom temperature");
+	tankBottomTemperatureSensor->setUnitOfMeasurement("°C");
+	tankBottomTemperatureSensor->setIcon("mdi:propane-tank");
+	tankBottomTemperatureSensor->setDeviceClass("temperature");
+	tankBottomTemperatureSensor->setStateClass("measurement");
+
+	roomTemperatureSensor->setName("Room temperature");
+	roomTemperatureSensor->setUnitOfMeasurement("°C");
+	roomTemperatureSensor->setDeviceClass("temperature");
+	roomTemperatureSensor->setStateClass("measurement");
+
+	// Instantiate HASensor objects using new()
+	errorStatus = new HASensor("error_state", HASensor::JsonAttributesFeature);
+
+	errorStatus->setName("Error state");
+	errorStatus->setIcon("mdi:alert");
+
+	// Instantiate heating relay objects using new()
+	heatingRelayStairs2 = new HASwitchX("heating_relay_stairs_2", "ზედა კიბე", PIN_HR_1, false);
+	heatingRelayWc2 = new HASwitchX("heating_relay_wc_2", "ზედა WC", PIN_HR_2, false);
+	heatingRelayHall2 = new HASwitchX("heating_relay_hall_2", "ზალა 2", PIN_HR_3, false);
+	heatingRelayGio = new HASwitchX("heating_relay_gio", "გიო", PIN_HR_4, false);
+	heatingRelayNana = new HASwitchX("heating_relay_nana", "ნანა", PIN_HR_5, false);
+	heatingRelayGio3 = new HASwitchX("heating_relay_gio3", "გიო 3", PIN_HR_6, false);
+	heatingRelayGia = new HASwitchX("heating_relay_gia", "გია", PIN_HR_7, false);
+	heatingRelayBar = new HASwitchX("heating_relay_bar", "ბარი", PIN_HR_8, false);
+	heatingRelayHT = new HASwitchX("heating_relay_ht", "კინო", PIN_HR_9, false);
+	heatingRelayKitchen = new HASwitchX("heating_relay_kitchen", "სამზარეულო", PIN_HR_10, false);
+	heatingRelayHall1 = new HASwitchX("heating_relay_hall_1", "ზალა 1", PIN_HR_11, false);
+	heatingRelayStairs1 = new HASwitchX("heating_relay_stairs_1", "ქვედა კიბე", PIN_HR_12, false);
+	heatingRelayWc1 = new HASwitchX("heating_relay_wc_1", "ქვედა WC", PIN_HR_13, false);
+
+	// Instantiate HATargetTemperatureX objects using new()
+	targetTemperatureBar = new HATargetTemperatureX("target_temperature_bar", "ბარი", EEPROM_ADDR_TARGET_TEMPERATURE_BAR);
+	targetTemperatureHT = new HATargetTemperatureX("target_temperature_ht", "კინო", EEPROM_ADDR_TARGET_TEMPERATURE_HT);
+	targetTemperatureGio = new HATargetTemperatureX("target_temperature_gio", "გიო", EEPROM_ADDR_TARGET_TEMPERATURE_GIO);
+	targetTemperatureGio3 = new HATargetTemperatureX("target_temperature_gio3", "გიო 3", EEPROM_ADDR_TARGET_TEMPERATURE_GIO3);
+	targetTemperatureKitchen = new HATargetTemperatureX("target_temperature_kitchen", "სამზარეულო", EEPROM_ADDR_TARGET_TEMPERATURE_KITCHEN);
+	targetTemperatureHall1 = new HATargetTemperatureX("target_temperature_hall_1", "ზალა 1", EEPROM_ADDR_TARGET_TEMPERATURE_HALL1);
+	targetTemperatureKvetaStairs1 = new HATargetTemperatureX("target_temperature_kveta_stairs_1", "ქვედა კიბე", EEPROM_ADDR_TARGET_TEMPERATURE_KVETASTAIRS1);
+	targetTemperatureWC1 = new HATargetTemperatureX("target_temperature_wc_1", "ქვედა WC", EEPROM_ADDR_TARGET_TEMPERATURE_WC1);
+	targetTemperatureStairs2 = new HATargetTemperatureX("target_temperature_stairs_2", "ზედა კიბე", EEPROM_ADDR_TARGET_TEMPERATURE_STAIRS2);
+	targetTemperatureWC2 = new HATargetTemperatureX("target_temperature_wc_2", "ზედა WC", EEPROM_ADDR_TARGET_TEMPERATURE_WC2);
+	targetTemperatureGia = new HATargetTemperatureX("target_temperature_gia", "გია", EEPROM_ADDR_TARGET_TEMPERATURE_GIA);
+	targetTemperatureNana = new HATargetTemperatureX("target_temperature_nana", "ნანა", EEPROM_ADDR_TARGET_TEMPERATURE_NANA);
+	targetTemperatureHall2 = new HATargetTemperatureX("target_temperature_hall_2", "ზალა 2", EEPROM_ADDR_TARGET_TEMPERATURE_HALL2);
+	targetTemperaturePool = new HATargetTemperaturePoolX("target_temperature_pool", "Pool", EEPROM_ADDR_TARGET_TEMPERATURE_POOL);
+
+	// Create RoomTemperatureSensor objects using new() for each sensor
+	roomSensors[0] = new RoomTemperatureSensor{"home/temperature/gw2000b_indoor_temperature", 0.0, targetTemperatureBar, heatingRelayBar};
+	roomSensors[1] = new RoomTemperatureSensor{"home/temperature/gw2000b_temperature_1", 0.0, targetTemperatureHT, heatingRelayHT};
+	roomSensors[2] = new RoomTemperatureSensor{"home/temperature/gw2000b_temperature_3", 0.0, targetTemperatureGio, heatingRelayGio};
+	roomSensors[3] = new RoomTemperatureSensor{"home/temperature/gw2000b_temperature_4", 0.0, targetTemperatureGio3, heatingRelayGio3};
+
+	roomSensors[4] = new RoomTemperatureSensor{"home/temperature/gw2000a_temperature_1", 0.0, targetTemperatureKitchen, heatingRelayKitchen};
+	roomSensors[5] = new RoomTemperatureSensor{"home/temperature/gw2000a_temperature_2", 0.0, targetTemperatureHall1, heatingRelayHall1};
+	roomSensors[6] = new RoomTemperatureSensor{"home/temperature/gw2000a_temperature_3", 0.0, targetTemperatureKvetaStairs1, heatingRelayStairs1};
+	roomSensors[7] = new RoomTemperatureSensor{"home/temperature/gw2000a_temperature_4", 0.0, targetTemperatureWC1, heatingRelayWc1};
+	roomSensors[8] = new RoomTemperatureSensor{"home/temperature/gw2000a_temperature_5", 0.0, targetTemperatureStairs2, heatingRelayStairs2};
+	roomSensors[9] = new RoomTemperatureSensor{"home/temperature/gw2000a_temperature_6", 0.0, targetTemperatureWC2, heatingRelayWc2};
+	roomSensors[10] = new RoomTemperatureSensor{"home/temperature/gw2000a_temperature_7", 0.0, targetTemperatureGia, heatingRelayGia};
+	roomSensors[11] = new RoomTemperatureSensor{"home/temperature/gw2000a_temperature_8", 0.0, targetTemperatureNana, heatingRelayNana};
+	roomSensors[12] = new RoomTemperatureSensor{"home/temperature/gw2000a_indoor_temperature", 0.0, targetTemperatureHall2, heatingRelayHall2};
+
+	roomSensors[13] = new RoomTemperatureSensor{"home/temperature/gw2000b_temperature_8", 0.0, targetTemperaturePool, NULL};
+	roomSensors[14] = new RoomTemperatureSensor{"home/temperature/gw2000b_outdoor_temperature", 0.0, NULL, NULL};
+
+	// 1. Collector Switch-On Temperature Difference (ΔT On)
+	// The minimum temperature difference between the collector and the storage tank required to activate the circulation pump.
+	// Optimal Value: 6°C
+	// Range: 4°C (min) to 15°C (max) to allow flexibility for different operating conditions.
+	settingCollectorSwitchOnTempDiff = new HASettingX("collector_switch_on_temp_diff", "Collector Switch-On Temperature Difference", 6, 4, 15, EEPROM_ADDR_COLLECTOR_SWITCH_ON_TEMP_DIFF);
+
+	// 2. Collector Switch-Off Temperature Difference (ΔT Off)
+	// The temperature difference at which the circulation pump deactivates to prevent inefficient operation.
+	// Optimal Value: 3°C
+	// Range: 2°C (min) to 6°C (max) to prevent short cycling and maintain efficiency.
+	settingCollectorSwitchOffTempDiff = new HASettingX("collector_switch_off_temp_diff", "Collector Switch-Off Temperature Difference", 3, 2, 6, EEPROM_ADDR_COLLECTOR_SWITCH_OFF_TEMP_DIFF);
+
+	// 3. Collector Emergency Switch-Off Temperature (EMOF)
+	// The maximum allowable temperature for the collector before the system shuts down to prevent damage.
+	// Optimal Value: 130°C
+	// Range: 120°C (min) to 140°C (max) to ensure safety without premature shutdowns.
+	settingCollectorEmergencySwitchOffT = new HASettingX("collector_emergency_switch_off_t", "Collector Emergency Switch-Off Temperature", 130, 120, 140, EEPROM_ADDR_COLLECTOR_EMERGENCY_SWITCH_OFF_T);
+
+	// 4. Collector Emergency Switch-On Temperature (EMON)
+	// The temperature at which the system can resume operation after an emergency shutdown.
+	// Optimal Value: 110°C
+	// Adjusted Range: 100°C (min) to 125°C (max) to ensure safe resumption and prevent rapid cycling.
+	settingCollectorEmergencySwitchOnT = new HASettingX("collector_emergency_switch_on_t", "Collector Emergency Switch-On Temperature", 110, 100, 125, EEPROM_ADDR_COLLECTOR_EMERGENCY_SWITCH_ON_T);
+
+	// 5. Collector Antifreeze Temperature (CFR)
+	// The temperature that activates the antifreeze function to prevent freezing of the collector and pipes.
+	// Optimal Value: 2°C
+	// Adjusted Range: 0°C (min) to 5°C (max) to balance freeze protection and energy efficiency.
+	settingCollectorAntifreezeT = new HASettingX("collector_antifreeze_t", "Collector Antifreeze Temperature", 2, 0, 5, EEPROM_ADDR_COLLECTOR_ANTIFREEZE_T);
+
+	// 6. Maximum Tank Temperature (SMX)
+	// The maximum temperature allowed for the storage tank to prevent overheating and potential damage.
+	// Optimal Value: 75°C
+	// Adjusted Range: 65°C (min) to 85°C (max) to allow for varying hot water needs and safety margins.
+	settingMaxTankT = new HASettingX("max_tank_temp", "Maximum Tank Temperature", 75, 65, 85, EEPROM_ADDR_MAX_TANK_TEMP);
+
+	// 7. Absolute Maximum Tank Temperature (ABS)
+	// An emergency limit to prevent the tank from reaching dangerous temperatures.
+	// Optimal Value: 85°C
+	// Adjusted Range: 80°C (min) to 90°C (max) to provide a safety buffer for system protection.
+	settingAbsoluteMaxTankT = new HASettingX("absolute_max_tank_temp", "Absolute Maximum Tank Temperature", 85, 80, 90, EEPROM_ADDR_ABSOLUTE_MAX_TANK_TEMP);
+
+	// 8. Tank Temperature to Switch On Pool Heating
+	// The tank temperature at which the pool heating system switches on.
+	// Optimal Value: 55°C
+	// Range: 40°C (min) to 70°C (max) to allow for different user preferences.
+	settingPoolSwitchOnT = new HASettingX("pool_switch_on_t", "Tank Temperature to Switch On Pool Heating", 55, 40, 70, EEPROM_ADDR_POOL_SWITCH_ON_T);
+
+	// 9. Tank Temperature to Switch Off Pool Heating
+	// The tank temperature at which the pool heating system switches off.
+	// Optimal Value: 50°C
+	// Range: 35°C (min) to 65°C (max) to allow for different user preferences.
+	settingPoolSwitchOffT = new HASettingX("pool_switch_off_t", "Tank Temperature to Switch Off Pool Heating", 50, 35, 65, EEPROM_ADDR_POOL_SWITCH_OFF_T);
+
+#ifndef SIMULATION_MODE
+	device.setName("Thermostat controller");
+#else
+	device.setName("Thermostat controller (Simulated)");
+#endif
+	device.setSoftwareVersion(CONTROLLER__VERSION);
+	device.setManufacturer("Gregory Nikolaishvili");
+}
+
+void initHaObjects()
+{
+	device.enableSharedAvailability();
+	device.enableLastWill();
+
+	solarRecirculatingPump->setState(true);
+	heatingRecirculatingPump->setState(true);
+
+	heatingRelayStairs2->setDefaultState(true);
+	heatingRelayWc2->setDefaultState(true);
+	heatingRelayHall2->setDefaultState(true);
+	heatingRelayGio->setDefaultState(true);
+	heatingRelayNana->setDefaultState(true);
+	heatingRelayGio3->setDefaultState(true);
+	heatingRelayGia->setDefaultState(true);
+	heatingRelayBar->setDefaultState(true);
+	heatingRelayHT->setDefaultState(true);
+	heatingRelayKitchen->setDefaultState(true);
+	heatingRelayHall1->setDefaultState(true);
+	heatingRelayStairs1->setDefaultState(true);
+	heatingRelayWc1->setDefaultState(true);
+}
+
 void setup()
 {
 	wdt_disable();
 
 	Serial.begin(115200);
 	Serial.println();
-	Serial.println(F("Initializing.. ver. 4.0.5"));
+	Serial.print(F("Initializing.. ver. "));
+	Serial.println(F(CONTROLLER__VERSION));
 
 	pinMode(PIN_BLINKING_LED, OUTPUT);
 	digitalWrite(PIN_BLINKING_LED, LOW); // Turn on led at start
+
+#if defined(ESP8266) || defined(ESP32)
+	// Initialize EEPROM for ESP devices
+	EEPROM.begin(128); // Adjust the size as needed
+#endif
 
 #ifndef SIMULATION_MODE
 	pinMode(PIN_SD_CARD_SELECT, OUTPUT);
@@ -172,7 +356,11 @@ void setup()
 	digitalWrite(PIN_ETHERNET_SS, HIGH); // Disable Ethernet
 #endif
 
+	solarT = new SolarTemperatureReader(PIN_MAX31865_SELECT);
+
 	setTime(0, 0, 1, 1, 1, 2001);
+
+	createHaObjects();
 
 	delay(1000);
 
@@ -184,85 +372,9 @@ void setup()
 
 	delay(500);
 
+	initHaObjects();
+
 	mqtt.begin(MQTT_BROKER, MQTT_USERNAME, MQTT_PASSWORD);
-
-	device.enableSharedAvailability();
-	device.enableLastWill();
-
-#ifndef SIMULATION_MODE
-	device.setName("Thermostat controller");
-#else
-	device.setName("Thermostat controller (Simulated)");
-#endif
-	device.setSoftwareVersion("4.0.4");
-	device.setManufacturer("Gregory Nikolaishvili");
-
-	solarRecirculatingPump.setState(true);
-	heatingRecirculatingPump.setState(true);
-
-	modeSelect.setIcon("mdi:auto-mode");
-	modeSelect.setName("Thermostat mode");
-	modeSelect.setOptions("Off;Winter;Summer;Summer & Pool");
-	modeSelect.setRetain(true);
-	modeSelect.onCommand(onModeSelectCommand);
-
-	pressureSensor.setName("Solar pressure");
-	pressureSensor.setUnitOfMeasurement("bar");
-	pressureSensor.setIcon("mdi:gauge");
-	pressureSensor.setDeviceClass("pressure");
-	pressureSensor.setStateClass("measurement");
-
-	solarTemperatureSensor.setName("Solar panel temperature");
-	solarTemperatureSensor.setUnitOfMeasurement("°C");
-	solarTemperatureSensor.setIcon("mdi:solar-panel-large");
-	solarTemperatureSensor.setDeviceClass("temperature");
-	solarTemperatureSensor.setStateClass("measurement");
-
-	tankTopTemperatureSensor.setName("Tank top temperature");
-	tankTopTemperatureSensor.setUnitOfMeasurement("°C");
-	tankTopTemperatureSensor.setIcon("mdi:propane-tank");
-	tankTopTemperatureSensor.setDeviceClass("temperature");
-	tankTopTemperatureSensor.setStateClass("measurement");
-
-	tankBottomTemperatureSensor.setName("Tank bottom temperature");
-	tankBottomTemperatureSensor.setUnitOfMeasurement("°C");
-	tankBottomTemperatureSensor.setIcon("mdi:propane-tank");
-	tankBottomTemperatureSensor.setDeviceClass("temperature");
-	tankBottomTemperatureSensor.setStateClass("measurement");
-
-	roomTemperatureSensor.setName("Room temperature");
-	roomTemperatureSensor.setUnitOfMeasurement("°C");
-	roomTemperatureSensor.setDeviceClass("temperature");
-	roomTemperatureSensor.setStateClass("measurement");
-
-	errorStatus.setName("Error state");
-	errorStatus.setIcon("mdi:alert");
-
-	heatingRelayStairs2.setState(true);
-	heatingRelayWc2.setState(true);
-	heatingRelayHall2.setState(true);
-	heatingRelayGio.setState(true);
-	heatingRelayNana.setState(true);
-	heatingRelayGio3.setState(true);
-	heatingRelayGia.setState(true);
-	heatingRelayBar.setState(true);
-	heatingRelayHT.setState(true);
-	heatingRelayKitchen.setState(true);
-	heatingRelayHall1.setState(true);
-	heatingRelayStairs1.setState(true);
-	heatingRelayWc1.setState(true);
-
-	settingCollectorSwitchOnTempDiff.setInitialValue();
-	settingCollectorSwitchOffTempDiff.setInitialValue();
-	settingCollectorEmergencySwitchOffT.setInitialValue();
-	settingCollectorEmergencySwitchOnT.setInitialValue();
-	settingCollectorMinimumSwitchOnT.setInitialValue();
-	settingCollectorAntifreezeT.setInitialValue();
-	settingMaxTankT.setInitialValue();
-	settingAbsoluteMaxTankT.setInitialValue();
-	settingPoolSwitchOnT.setInitialValue();
-	settingPoolSwitchOffT.setInitialValue();
-
 	mqtt.onConnected(onConnected);
 	mqtt.onMessage(onMessageReceived);
 
@@ -277,11 +389,11 @@ void onConnected()
 	// Subscribe to temperature topics
 	for (int i = 0; i < MQTT_TEMPERATURE_SENSOR_COUNT; i++)
 	{
-		if (roomSensors[i].topic != NULL) // Ensure the topic is valid
+		if (roomSensors[i]->topic != NULL) // Ensure the topic is valid
 		{
-			mqtt.subscribe(roomSensors[i].topic);
+			mqtt.subscribe(roomSensors[i]->topic);
 			Serial.print(F("Subscribed to "));
-			Serial.println(roomSensors[i].topic);
+			Serial.println(roomSensors[i]->topic);
 		}
 	}
 
@@ -309,7 +421,7 @@ void onMessageReceived(const char *topic, const uint8_t *payload, uint16_t lengt
 	for (int i = 0; i < MQTT_TEMPERATURE_SENSOR_COUNT; i++)
 	{
 		// Check if the topic matches the temperature sensor
-		if (strcmp(topic, roomSensors[i].topic) == 0)
+		if (strcmp(topic, roomSensors[i]->topic) == 0)
 		{
 			// Convert payload to float
 			float tempValue = message.toFloat();
@@ -318,10 +430,10 @@ void onMessageReceived(const char *topic, const uint8_t *payload, uint16_t lengt
 				Serial.println(F("Error: Received invalid temperature value."));
 				continue;
 			}
-			roomSensors[i].value = tempValue;
+			roomSensors[i]->value = tempValue;
 
 			Serial.print(F("Updated "));
-			Serial.print(roomSensors[i].topic);
+			Serial.print(roomSensors[i]->topic);
 			Serial.print(F(" to "));
 			Serial.println(tempValue);
 
@@ -350,7 +462,7 @@ void onModeSelectCommand(int8_t index, HASelect *sender)
 	// it may return null
 	if (sender->getCurrentOption())
 	{
-		Serial.print("Current option: ");
+		Serial.print(F("Current option: "));
 		Serial.println(sender->getCurrentOption());
 	}
 }
@@ -360,17 +472,17 @@ void processHeaterRelays()
 	// Iterate through all sensors to find a relay
 	for (int i = 0; i < MQTT_TEMPERATURE_SENSOR_COUNT; i++)
 	{
-		RoomTemperatureSensor sensor = roomSensors[i];
-		if (sensor.relay == NULL || sensor.targetTemperature == NULL)
+		RoomTemperatureSensor *sensor = roomSensors[i];
+		if (sensor->relay == NULL || sensor->targetTemperature == NULL)
 			continue;
 
-		float tempValue = sensor.targetTemperature->getTargetTemperature();
+		float tempValue = sensor->value;
 		if (isnan(tempValue))
 		{
 			// Turn ON
-			if (!sensor.relay->isTurnedOn())
+			if (!sensor->relay->isTurnedOn())
 			{
-				sensor.relay->setOnOff(HIGH);
+				sensor->relay->setOnOff(HIGH);
 				Serial.print(F("Heating Relay "));
 				Serial.print(i + 1);
 				Serial.println(F(" turned ON."));
@@ -378,14 +490,14 @@ void processHeaterRelays()
 			continue;
 		}
 
-		float targetTemp = sensor.targetTemperature->getTargetTemperature(); // Get current target temperature
-		float hysteresis = 0.5;													  // Define hysteresis value
+		float targetTemp = sensor->targetTemperature->getCurrentState().toFloat(); // Get current target temperature
+		float hysteresis = 0.5;													   // Define hysteresis value
 
 		if (tempValue < (targetTemp - hysteresis))
 		{
-			if (!sensor.relay->isTurnedOn())
+			if (!sensor->relay->isTurnedOn())
 			{
-				sensor.relay->setOnOff(HIGH);
+				sensor->relay->setOnOff(HIGH);
 				Serial.print(F("Heating Relay "));
 				Serial.print(i + 1);
 				Serial.println(F(" turned ON."));
@@ -393,9 +505,9 @@ void processHeaterRelays()
 		}
 		else if (tempValue > (targetTemp + hysteresis))
 		{
-			if (sensor.relay->isTurnedOn())
+			if (sensor->relay->isTurnedOn())
 			{
-				sensor.relay->setOnOff(LOW);
+				sensor->relay->setOnOff(LOW);
 				Serial.print(F("Heating Relay "));
 				Serial.print(i + 1);
 				Serial.println(F(" turned OFF."));
@@ -415,7 +527,7 @@ static void oncePer5Second()
 
 void oncePerSecond()
 {
-	// Serial.print("MQTT: ");
+	// Serial.print(F("MQTT: "));
 	// Serial.println(mqtt.isConnected());
 	if ((secondTicks % 5) == 0)
 		oncePer5Second();
@@ -443,7 +555,7 @@ void oncePerHalfSecond(void)
 
 	if (halfSecondTicks % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0)
 	{
-		pressure.processPressureSensor();
+		pressure->processPressureSensor();
 #ifndef SIMULATION_MODE
 		ProcessTemperatureSensors();
 #endif
@@ -470,5 +582,8 @@ void loop()
 	}
 
 	Alarm.delay(0);
+#ifndef SIMULATION_MODE
+	Ethernet.maintain();
+#endif
 	mqtt.loop();
 }

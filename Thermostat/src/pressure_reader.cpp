@@ -1,9 +1,9 @@
 #include "pressure_reader.h"
 #include "main.h"
 
-PressureReader::PressureReader(HASensorNumber &pressureSensor)
+PressureReader::PressureReader(HASensorNumber *pressureSensor)
 {
-  _pressureSensor = &pressureSensor;
+  _pressureSensor = pressureSensor;
 
   _pressureAvg = new MovingAverageFilter(5, PRESSURE_ERR_VALUE);
   pinMode(PIN_PRESSURE_SENSOR, INPUT);
@@ -20,13 +20,13 @@ void PressureReader::processPressureSensor()
   value = round(P);          // KPa, i.e 210 Kpa from 2.1 Bar
   // Returns pressure * 10 in Bars
 
-  //	Serial.print("Pressure = ");
+  //	Serial.print(F("Pressure = "));
   //	Serial.print(P);
-  //	Serial.print(" KPa, Value = ");
+  //	Serial.print(F(" KPa, Value = "));
   //	Serial.print(value);
-  //	Serial.print(", Voltage = ");
+  //	Serial.print(F(", Voltage = "));
   //	Serial.print(V);
-  //  Serial.print("V, P10 = ");
+  //  Serial.print(F("V, P10 = "));
   //  Serial.println(pressure10);
 
   int newValue = _pressureAvg->process(value);

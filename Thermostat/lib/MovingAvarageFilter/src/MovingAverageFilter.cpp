@@ -1,7 +1,7 @@
 ﻿#include <arduino.h>
 #include "MovingAverageFilter.h"
 
-MovingAverageFilter::MovingAverageFilter(unsigned int newDataPointsCount, int newErrorValue)
+MovingAverageFilter::MovingAverageFilter(uint16_t newDataPointsCount, int16_t newErrorValue)
 {
 	errorValue = newErrorValue;
 	lastValue = errorValue;
@@ -16,13 +16,13 @@ MovingAverageFilter::MovingAverageFilter(unsigned int newDataPointsCount, int ne
 
 	currentIdx = 0; //initialize so that we start to write at index 0
 
-	for (unsigned int i = 0; i < dataPointsCount; i++)
+	for (uint16_t i = 0; i < dataPointsCount; i++)
 	{
 		values[i] = 0; // fill the array with 0's
 	}
 }
 
-int MovingAverageFilter::process(int value)
+int16_t MovingAverageFilter::process(int16_t value)
 {
 	if (value == errorValue)
 	{
@@ -59,9 +59,9 @@ int MovingAverageFilter::process(int value)
 
 	currentIdx = (currentIdx + 1) % dataPointsCount;
 
-	int curValueM10 = sum * 10 / readingCount;
+	int16_t curValueM10 = sum * 10 / readingCount;
 
-	int deltaM10 = curValueM10 - lastValue * 10;
+	int16_t deltaM10 = curValueM10 - lastValue * 10;
 	if (abs(deltaM10) >= 8) // თუ 0.8-ით მეტია წინაზე, მაშინ შეიცვალოს, ისე დარჩეს ძველი მნიშვნელობა
 	{
 		lastValue = round(curValueM10 / 10);
@@ -69,7 +69,7 @@ int MovingAverageFilter::process(int value)
 	return lastValue;
 }
 
-int MovingAverageFilter::getCurrentValue()
+int16_t MovingAverageFilter::getCurrentValue()
 {
 	return lastValue;
 }

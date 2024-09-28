@@ -1,48 +1,94 @@
 #include "HASettingX.h"
+#include <EEPROM.h>
 
-static void onNumberCommand(HANumeric number, HANumber *sender);
-
-HASettingX::HASettingX(const char *uniqueId, const char *name, int initialValue, int min, int max)
-    : HANumber(uniqueId, HANumber::PrecisionP0), _initialValue(initialValue)
+HASettingX::HASettingX(const char *uniqueId, const char *name, int16_t defaultValue, int16_t min, int16_t max, int16_t eepromAddress)
+    : HANumber(uniqueId, HANumber::PrecisionP0), _defaultValue(defaultValue), _eepromAddress(eepromAddress)
 {
-  setName(name);
   setMin(min);
   setMax(max);
+
+  // Read value from EEPROM
+  int16_t storedValue = readIntFromEEPROM(_eepromAddress);
+
+  Serial.print(name);
+  Serial.print(" ");
+  Serial.println(storedValue);
+
+  // Check if the stored value is within valid range
+  if (storedValue >= min && storedValue <= max)
+  {
+    setCurrentState(storedValue);
+  }
+  else
+  {
+    // Use default value and write it to EEPROM
+    setCurrentState(defaultValue);
+    writeIntToEEPROM(_eepromAddress, defaultValue);
+
+    Serial.print("Default value saved: ");
+    Serial.print(defaultValue);
+    Serial.print("Rereading: ");
+    storedValue = readIntFromEEPROM(_eepromAddress);
+    Serial.println(storedValue);
+  }
+
+  setName(name);
   setStep(1);
-  // setMode(HANumber::ModeAuto);
+  setMode(HANumber::ModeBox);
   setIcon("mdi:thermometer-lines");
   setUnitOfMeasurement("°C");
   setDeviceClass("temperature");
 
-  onCommand(onNumberCommand);
+  onCommand(HASettingX::onNumberCommand);
 }
 
-int HASettingX::getSettingValue()
+int16_t HASettingX::getSettingValue()
 {
   return getCurrentState().toInt16();
 }
 
-void HASettingX::setInitialValue()
+int16_t HASettingX::readIntFromEEPROM(int16_t address)
 {
-  setRetain(true);
-  setState(_initialValue);
+  int16_t value = 0;
+  EEPROM.get(address, value);
+  return value;
 }
 
-static void onNumberCommand(HANumeric number, HANumber *sender)
+void HASettingX::writeIntToEEPROM(int16_t address, int16_t value)
 {
+  EEPROM.put(address, value);
+#if defined(ESP8266) || defined(ESP32)
+  EEPROM.commit(); // Necessary on ESP devices
+#endif
+}
+
+void HASettingX::onNumberCommand(HANumeric number, HANumber *sender)
+{
+  HASettingX *setting = static_cast<HASettingX *>(sender);
+
+  int16_t intValue;
+
   if (!number.isSet())
   {
-    Serial.println("Reset command received");
-    // the reset command was send by Home Assistant
+    Serial.println(F("Reset setting command received"));
+
+    // Handle the reset command
+    intValue = setting->_defaultValue;
   }
   else
   {
-    // you can do whatever you want with the number as follows:
-    int16_t value = number.toInt16();
+    intValue = number.toInt16();
 
-    Serial.print("Setting received: ");
-    Serial.println(value);
+    Serial.print(F("Setting received: "));
+    Serial.println(intValue);
   }
 
-  sender->setState(number); // report the selected option back to the HA panel
+  // Only write to EEPROM if the value has changed
+  if (intValue != setting->getSettingValue())
+  {
+    setting->writeIntToEEPROM(setting->_eepromAddress, intValue);
+  }
+
+  // Report the new state back to Home Assistant
+  sender->setState(intValue);
 }
