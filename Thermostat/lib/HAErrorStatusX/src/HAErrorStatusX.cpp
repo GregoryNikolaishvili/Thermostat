@@ -2,7 +2,7 @@
 #include <EEPROM.h>
 
 HAErrorStatusX::HAErrorStatusX()
-    : HASensor("error_state", HASensor::JsonAttributesFeature), _max31865_fault(0), _errors(0)
+    : HASensor("error_state", HASensor::JsonAttributesFeature), _max31865_fault(0xFF), _errors(0xFF)
 {
   setName("Error state");
   setIcon("mdi:alert");

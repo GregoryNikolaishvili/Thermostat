@@ -5,14 +5,17 @@ HAModeX::HAModeX(int16_t eepromAddress)
     : HASelect("mode"), _eepromAddress(eepromAddress)
 {
   int16_t storedValue = readIntFromEEPROM();
+  Serial.print(F("Mode: "));
+	Serial.println(storedValue);
+
   if (storedValue >= 0 && storedValue <= 3)
   {
     setCurrentState(storedValue);
   }
   else
   {
-    setCurrentState(0);
-    writeIntToEEPROM(0);
+    setCurrentState(1);
+    writeIntToEEPROM(1);
   }
 
   setName("Thermostat mode");

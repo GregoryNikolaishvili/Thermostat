@@ -354,10 +354,15 @@ void setup()
 
 	int eepromSavedVersion = 0;
 	EEPROM.get(EEPROM_ADDR_VERSION, eepromSavedVersion);
+	Serial.print(F("Settings version: "));
+	Serial.println(eepromSavedVersion);
+
 	if (eepromSavedVersion != EEPROM_CURRENT_VERSION)
 	{
-		for (int i = 0; i < STORAGE_ADDRESS_DS18B20_SETTINGS; i++)
-			EEPROM.write(i, 0xFF); // Write 0xFF to each byte (erased state)
+		eeprom_update_word(EEPROM_ADDR_VERSION, EEPROM_CURRENT_VERSION);
+		
+		for (int i = 2; i < STORAGE_ADDRESS_DS18B20_SETTINGS; i++)
+			eeprom_update_byte((uint8_t*)i, 0xFF); // Write 0xFF to each byte (erased state)
 	}
 
 	solarT = new SolarTemperatureReader(PIN_MAX31865_SELECT);
