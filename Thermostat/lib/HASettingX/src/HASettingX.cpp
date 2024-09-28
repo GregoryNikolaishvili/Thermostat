@@ -8,7 +8,7 @@ HASettingX::HASettingX(const char *uniqueId, const char *name, int16_t defaultVa
   setMax(max);
 
   // Read value from EEPROM
-  int16_t storedValue = readIntFromEEPROM(_eepromAddress);
+  int16_t storedValue = readIntFromEEPROM();
 
   // Check if the stored value is within valid range
   if (storedValue >= min && storedValue <= max)
@@ -19,7 +19,7 @@ HASettingX::HASettingX(const char *uniqueId, const char *name, int16_t defaultVa
   {
     // Use default value and write it to EEPROM
     setCurrentState(defaultValue);
-    writeIntToEEPROM(_eepromAddress, defaultValue);
+    writeIntToEEPROM(defaultValue);
   }
 
   setName(name);
@@ -37,16 +37,16 @@ int16_t HASettingX::getSettingValue()
   return getCurrentState().toInt16();
 }
 
-int16_t HASettingX::readIntFromEEPROM(int16_t address)
+int16_t HASettingX::readIntFromEEPROM()
 {
   int16_t value = 0;
-  EEPROM.get(address, value);
+  EEPROM.get(_eepromAddress, value);
   return value;
 }
 
-void HASettingX::writeIntToEEPROM(int16_t address, int16_t value)
+void HASettingX::writeIntToEEPROM(int16_t value)
 {
-  EEPROM.put(address, value);
+  EEPROM.put(_eepromAddress, value);
 #if defined(ESP8266) || defined(ESP32)
   EEPROM.commit(); // Necessary on ESP devices
 #endif
@@ -76,7 +76,7 @@ void HASettingX::onNumberCommand(HANumeric number, HANumber *sender)
   // Only write to EEPROM if the value has changed
   if (intValue != setting->getSettingValue())
   {
-    setting->writeIntToEEPROM(setting->_eepromAddress, intValue);
+    setting->writeIntToEEPROM(intValue);
   }
 
   // Report the new state back to Home Assistant

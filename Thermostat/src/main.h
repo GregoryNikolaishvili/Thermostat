@@ -17,6 +17,16 @@ struct RoomTemperatureSensor
   HASwitchX *relay;            // Pointer to the associated heating relay
 };
 
+// Error flags
+#define ERR_SOLAR_T         1
+#define ERR_TANK_BOTTOM_T   2
+#define ERR_TANK_TOP_T      4
+#define ERR_EMOF            8
+#define ERR_CFR             16
+#define ERR_ABSMAX_T        32
+#define ERR_SMX             64
+
+
 // Arduino Mega -->  MAX31865
 //     -------------------------- -
 //     CS:   pin 5    -->  CS
@@ -142,34 +152,39 @@ const byte PIN_HR_16 = D8;
 
 #endif
 
-// Define EEPROM addresses for settings (each int uses 2 bytes on Arduino Mega2560)
-#define EEPROM_ADDR_COLLECTOR_SWITCH_ON_TEMP_DIFF 0    // Address 0
-#define EEPROM_ADDR_COLLECTOR_SWITCH_OFF_TEMP_DIFF 2   // Address 2
-#define EEPROM_ADDR_COLLECTOR_EMERGENCY_SWITCH_OFF_T 4 // Address 4
-#define EEPROM_ADDR_COLLECTOR_EMERGENCY_SWITCH_ON_T 6  // Address 6
-#define EEPROM_ADDR_COLLECTOR_ANTIFREEZE_T 8           // Address 8
-#define EEPROM_ADDR_MAX_TANK_TEMP 10                   // Address 10
-#define EEPROM_ADDR_ABSOLUTE_MAX_TANK_TEMP 12          // Address 12
+#define EEPROM_CURRENT_VERSION 1
 
-#define EEPROM_ADDR_POOL_SWITCH_ON_T 14  // Address 14
-#define EEPROM_ADDR_POOL_SWITCH_OFF_T 16 // Address 16
+#define EEPROM_ADDR_VERSION 0    // Address 0
+#define EEPROM_ADDR_CONTROLLER_MODE 2    // Address 2
+
+// Define EEPROM addresses for settings (each int uses 2 bytes on Arduino Mega2560)
+#define EEPROM_ADDR_COLLECTOR_SWITCH_ON_TEMP_DIFF 10    
+#define EEPROM_ADDR_COLLECTOR_SWITCH_OFF_TEMP_DIFF 12   
+#define EEPROM_ADDR_COLLECTOR_EMERGENCY_SWITCH_OFF_T 14 
+#define EEPROM_ADDR_COLLECTOR_EMERGENCY_SWITCH_ON_T 16  
+#define EEPROM_ADDR_COLLECTOR_ANTIFREEZE_T 18          
+#define EEPROM_ADDR_MAX_TANK_TEMP 20                   
+#define EEPROM_ADDR_ABSOLUTE_MAX_TANK_TEMP 22          
+
+#define EEPROM_ADDR_POOL_SWITCH_ON_T 24
+#define EEPROM_ADDR_POOL_SWITCH_OFF_T 26
 
 // EEPROM addresses for target temperature settings (each float uses 4 bytes on Arduino Mega2560)
-#define EEPROM_ADDR_TARGET_TEMPERATURE_BAR 18          // Address 18
-#define EEPROM_ADDR_TARGET_TEMPERATURE_HT 22           // Address 22
-#define EEPROM_ADDR_TARGET_TEMPERATURE_GIO 26          // Address 26
-#define EEPROM_ADDR_TARGET_TEMPERATURE_GIO3 30         // Address 30
-#define EEPROM_ADDR_TARGET_TEMPERATURE_KITCHEN 34      // Address 34
-#define EEPROM_ADDR_TARGET_TEMPERATURE_HALL1 38        // Address 38
-#define EEPROM_ADDR_TARGET_TEMPERATURE_KVETASTAIRS1 42 // Address 42
-#define EEPROM_ADDR_TARGET_TEMPERATURE_WC1 46          // Address 46
-#define EEPROM_ADDR_TARGET_TEMPERATURE_STAIRS2 50      // Address 50
-#define EEPROM_ADDR_TARGET_TEMPERATURE_WC2 54          // Address 54
-#define EEPROM_ADDR_TARGET_TEMPERATURE_GIA 58          // Address 58
-#define EEPROM_ADDR_TARGET_TEMPERATURE_NANA 62         // Address 62
-#define EEPROM_ADDR_TARGET_TEMPERATURE_HALL2 66        // Address 66
-#define EEPROM_ADDR_TARGET_TEMPERATURE_POOL 70         // Address 70
+#define EEPROM_ADDR_TARGET_TEMPERATURE_BAR 28
+#define EEPROM_ADDR_TARGET_TEMPERATURE_HT 32
+#define EEPROM_ADDR_TARGET_TEMPERATURE_GIO 36
+#define EEPROM_ADDR_TARGET_TEMPERATURE_GIO3 40
+#define EEPROM_ADDR_TARGET_TEMPERATURE_KITCHEN 44
+#define EEPROM_ADDR_TARGET_TEMPERATURE_HALL1 48
+#define EEPROM_ADDR_TARGET_TEMPERATURE_STAIRS1 52
+#define EEPROM_ADDR_TARGET_TEMPERATURE_WC1 56
+#define EEPROM_ADDR_TARGET_TEMPERATURE_STAIRS2 60
+#define EEPROM_ADDR_TARGET_TEMPERATURE_WC2 64
+#define EEPROM_ADDR_TARGET_TEMPERATURE_GIA 68
+#define EEPROM_ADDR_TARGET_TEMPERATURE_NANA 72
+#define EEPROM_ADDR_TARGET_TEMPERATURE_HALL2 76
+#define EEPROM_ADDR_TARGET_TEMPERATURE_POOL 80
 
-const int STORAGE_ADDRESS_BOILER_SETTINGS = 100;
+const int STORAGE_ADDRESS_DS18B20_SETTINGS = 100;
 
 #endif

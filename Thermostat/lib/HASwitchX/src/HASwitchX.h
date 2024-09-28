@@ -7,7 +7,7 @@
 class HASwitchX : public HASwitch
 {
 public:
-    HASwitchX(const char *uniqueId, const char *name, byte pinId, bool isInverted);
+    HASwitchX(const char *uniqueId, const char *name, byte pinId, bool relayIsOnWhenLow, bool isInverted);
     
     bool isTurnedOn();
     void setOnOff(bool on);
@@ -18,14 +18,18 @@ public:
         return _pinId;
     }
 
-    inline bool isInverted() const
+    inline bool isRelayIsOnWhenLow() const
     {
-        return _isInverted;
+        return _relayIsOnWhenLow;
     }
 
 private:
     byte _pinId;
+    bool _relayIsOnWhenLow;
     bool _isInverted;
+    bool _mask;
+
+    static void onRelayCommand(bool state, HASwitch *sender);
 };
 
 #endif

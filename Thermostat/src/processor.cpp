@@ -5,7 +5,8 @@
 #include <TimeAlarms.h>
 #include <HASwitchX.h>
 #include <HASettingX.h>
-#include <TinyJsonBuilder.h>
+#include <HAModeX.h>
+#include <HAErrorStatusX.h>
 
 const byte TEMP_SENSOR_TANK_BOTTOM = 0;
 const byte TEMP_SENSOR_TANK_TOP = 1;
@@ -14,13 +15,7 @@ const byte TEMP_SENSOR_ROOM = 2;
 
 AlarmID_t heatingCirculationPumpStartingAlarm = 0xFF;
 
-bool isTankOverheated = false;
-
-// Define a buffer to hold the JSON string
-char jsonBuffer[512]; // Adjust size based on expected content
-TinyJsonBuilder jsonBuilder(jsonBuffer, sizeof(jsonBuffer));
-
-extern HASelect *modeSelect;
+extern HAModeX *controllerMode;
 extern RoomTemperatureSensor *roomSensors[MQTT_TEMPERATURE_SENSOR_COUNT];
 
 // Warning conditions
@@ -36,7 +31,7 @@ extern HASensorNumber *solarTemperatureSensor;
 extern HASensorNumber *tankTopTemperatureSensor;
 extern HASensorNumber *tankBottomTemperatureSensor;
 extern HASensorNumber *roomTemperatureSensor;
-extern HASensor *errorStatus;
+extern HAErrorStatusX *errorStatus;
 
 extern HASwitchX *heatingRecirculatingPump;
 extern HASwitchX *solarRecirculatingPump;
@@ -80,7 +75,7 @@ static void heatingCirculationPumpOn()
     if (isHeatingCirculationPumpStarting() || heatingRecirculatingPump->isTurnedOn())
         return;
 
-    if (modeSelect->getCurrentState() == THERMOSTAT_MODE_WINTER) // needs 5 min delay
+    if (controllerMode->getCurrentState() == THERMOSTAT_MODE_WINTER) // needs 5 min delay
     {
         heatingCirculationPumpStartingAlarm = Alarm.alarmOnce(elapsedSecsToday(now()) + CIRCULATING_PUMP_ON_DELAY_MINUTES * 60, heatingCirculationPumpOnTimer);
 
@@ -92,7 +87,7 @@ static void heatingCirculationPumpOn()
     }
 }
 
-static void heatingCirculationPumpPumpOff()
+static void heatingCirculationPumpOff()
 {
     if (heatingCirculationPumpStartingAlarm < 0xFF)
     {
@@ -140,16 +135,17 @@ static void AllHeaterRelaysToDefault()
     }
 }
 
-void initThermostat()
+void initThermostat(int16_t mode)
 {
-    if (modeSelect->getCurrentState() != THERMOSTAT_MODE_WINTER)
+    if (mode != THERMOSTAT_MODE_WINTER)
     {
         AllHeaterRelaysToDefault();
+        heatingCirculationPumpOff();
         return;
     }
 }
 
-static bool CheckSolarPanel(float TSolar, TinyJsonBuilder &jsonBuilder)
+static bool CheckSolarPanel(float TSolar, uint8_t &errors)
 {
     if (!isValidT(TSolar))
         return false;
@@ -166,7 +162,8 @@ static bool CheckSolarPanel(float TSolar, TinyJsonBuilder &jsonBuilder)
             Serial.println(F("EMOF activated"));
         warning_EMOF_IsActivated = true;
 
-        //jsonBuilder.addKeyValue(F("EMOF"), F("Max collector temperature protection is active"));
+        errors |= ERR_EMOF;
+        // jsonBuilder.addKeyValue(F("EMOF"), F("Max collector temperature protection is active"));
         return false;
     }
 
@@ -187,7 +184,8 @@ static bool CheckSolarPanel(float TSolar, TinyJsonBuilder &jsonBuilder)
             Serial.println(F("CFR activated"));
         }
 
-        //jsonBuilder.addKeyValue(F("CFR"), F("Frost protection of collector is active"));
+        errors |= ERR_CFR;
+        // jsonBuilder.addKeyValue(F("CFR"), F("Frost protection of collector is active"));
         return false;
     }
 
@@ -200,7 +198,7 @@ static bool CheckSolarPanel(float TSolar, TinyJsonBuilder &jsonBuilder)
     return true;
 }
 
-bool CheckTank(float TTank, TinyJsonBuilder &jsonBuilder)
+bool CheckTank(float TTank, uint8_t &errors)
 {
     if (!isValidT(TTank))
         return false;
@@ -220,7 +218,8 @@ bool CheckTank(float TTank, TinyJsonBuilder &jsonBuilder)
             Serial.println(F("ABSMAXT activated"));
         warning_MAXT_IsActivated = true;
 
-        //jsonBuilder.addKeyValue(F("ABSMAXT"), F("Absolute maximum tank temperature protection is active"));
+        errors |= ERR_ABSMAX_T;
+        // jsonBuilder.addKeyValue(F("ABSMAXT"), F("Absolute maximum tank temperature protection is active"));
         return false;
     }
 
@@ -239,7 +238,8 @@ bool CheckTank(float TTank, TinyJsonBuilder &jsonBuilder)
             Serial.println(F("SMX activated"));
         warning_SMX_IsActivated = true;
 
-        //jsonBuilder.addKeyValue(F("SMX"), F("Maximum tank temperature protection is active"));
+        errors |= ERR_SMX;
+        // jsonBuilder.addKeyValue(F("SMX"), F("Maximum tank temperature protection is active"));
         return false;
     }
 
@@ -255,9 +255,12 @@ bool CheckTank(float TTank, TinyJsonBuilder &jsonBuilder)
 // boiler & solar
 void ProcessTemperatureSensors()
 {
-    jsonBuilder.reset();
-    
-    float TSolar = solarT->getSolarPaneTemperature(jsonBuilder);
+    //    jsonBuilder.addKeyValue(F("MAX31865"), (int)fault);
+
+    uint8_t max31865_fault = 0;
+    uint8_t errors = 0;
+
+    float TSolar = solarT->getSolarPaneTemperature(max31865_fault);
     float TBottom = tankTemperatures.getTemperature(TEMP_SENSOR_TANK_BOTTOM); // Tank bottom
     float TTop = tankTemperatures.getTemperature(TEMP_SENSOR_TANK_TOP);       // Tank top
     float TRoom = tankTemperatures.getTemperature(TEMP_SENSOR_ROOM);
@@ -266,23 +269,29 @@ void ProcessTemperatureSensors()
     TSolar = 60;
     TBottom = 30;
 #endif
-    	Serial.print(F("T1 = ")); Serial.println(TSolar);
-    	Serial.print(F("T2 = ")); Serial.println(TBottom);
-    	Serial.print(F("T3 = ")); Serial.println(TTop);
+    Serial.print(F("T1 = "));
+    Serial.println(TSolar);
+    Serial.print(F("T2 = "));
+    Serial.println(TBottom);
+    Serial.print(F("T3 = "));
+    Serial.println(TTop);
 
     if (!isValidT(TSolar))
     {
-        //jsonBuilder.addKeyValue(F("SolarPanel"), F("Solar sensor temperature is invalid"));
+        errors |= ERR_SOLAR_T;
+        // jsonBuilder.addKeyValue(F("SolarPanel"), F("Solar sensor temperature is invalid"));
     }
 
     if (!isValidT(TBottom))
     {
-        //jsonBuilder.addKeyValue(F("TankBottom"), F("Tank bottom temperature is invalid"));
+        errors |= ERR_TANK_BOTTOM_T;
+        // jsonBuilder.addKeyValue(F("TankBottom"), F("Tank bottom temperature is invalid"));
     }
 
     if (!isValidT(TTop))
     {
-        //jsonBuilder.addKeyValue(F("TankTop"), F("Tank top temperature is invalid"));
+        errors |= ERR_TANK_TOP_T;
+        // jsonBuilder.addKeyValue(F("TankTop"), F("Tank top temperature is invalid"));
     }
 
     // Read sensor data
@@ -312,23 +321,11 @@ void ProcessTemperatureSensors()
 
     ////////////////// End of Read sensor data
 
-    bool isSolarOk = CheckSolarPanel(TSolar, jsonBuilder);
+    bool isSolarOk = CheckSolarPanel(TSolar, errors);
 
-    CheckTank(TBoiler, jsonBuilder);
+    CheckTank(TBoiler, errors);
 
-    if (!jsonBuilder.isEmpty())
-    {
-        errorStatus->setValue("error");
-        //const char *json = jsonBuilder.getJson();
-        //errorStatus->setJsonAttributes(json);
-        jsonBuilder.reset();
-        //Serial.println(json);
-    }
-    else
-    {
-        errorStatus->setValue("ok");
-        errorStatus->setJsonAttributes(nullptr);
-    }
+    errorStatus->setStatus(max31865_fault, errors);
 
     if (isSolarOk && isValidT(TSolar) && isValidT(TBottom) && TSolar > SOLAR_COLLECTOR_CMN) // T2 = Tank bottom
     {
@@ -344,11 +341,11 @@ void ProcessTemperatureSensors()
 
     if ((!warning_SMX_IsActivated && !warning_EMOF_IsActivated) && isValidT(TTop))
     {
-        if (modeSelect->getCurrentState() == THERMOSTAT_MODE_SUMMER_POOL)
+        if (controllerMode->getCurrentState() == THERMOSTAT_MODE_SUMMER_POOL)
         {
             if (pool_pump_state != "On")
             {
-                heatingCirculationPumpPumpOff();
+                heatingCirculationPumpOff();
             }
             else
             {
@@ -358,7 +355,7 @@ void ProcessTemperatureSensors()
                 }
                 else if (TTop < settingPoolSwitchOffT->getSettingValue())
                 {
-                    heatingCirculationPumpPumpOff();
+                    heatingCirculationPumpOff();
                 }
             }
         }

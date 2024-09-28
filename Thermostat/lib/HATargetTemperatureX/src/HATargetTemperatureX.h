@@ -11,8 +11,8 @@ public:
 private:
     int16_t _eepromAddress;
 
-    float readFloatFromEEPROM(int16_t address);
-    void writeFloatToEEPROM(int16_t address, float value);
+    float readFloatFromEEPROM();
+    void writeFloatToEEPROM(float value);
 
     static void onNumberCommand(HANumeric number, HANumber *sender);
 };

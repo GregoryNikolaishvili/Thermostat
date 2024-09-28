@@ -19,7 +19,7 @@ SolarTemperatureReader::SolarTemperatureReader(int8_t spi_cs)
 }
 
 // Returns temperature, or T_UNDEFINED
-float SolarTemperatureReader::getSolarPaneTemperature(TinyJsonBuilder &jsonBuilder)
+float SolarTemperatureReader::getSolarPaneTemperature(uint8_t &fault)
 {
   // const float RREF = 4300.0;// https://learn.adafruit.com/adafruit-max31865-rtd-pt100-amplifier/arduino-code
   // const float RREF = 4265.0;// https://learn.adafruit.com/adafruit-max31865-rtd-pt100-amplifier/arduino-code
@@ -40,7 +40,7 @@ float SolarTemperatureReader::getSolarPaneTemperature(TinyJsonBuilder &jsonBuild
   // Serial.print(F("RTD Temperature = ")); Serial.println(temperature);
 
   // Check and print any faults
-  uint8_t fault = _solarSensor->readFault();
+  fault = _solarSensor->readFault();
   if (fault)
   {
     _solarSensor->clearFault();
@@ -70,8 +70,6 @@ float SolarTemperatureReader::getSolarPaneTemperature(TinyJsonBuilder &jsonBuild
     {
       error += ", Under/Over voltage";
     }
-
-    //jsonBuilder.addKeyValue(F("MAX31865"), (int)fault);
     Serial.println(error);
     return NAN;
   }

@@ -9,7 +9,7 @@ HATargetTemperatureX::HATargetTemperatureX(const char *uniqueId, const char *nam
   setStep(0.1f);
 
   // Read value from EEPROM
-  float storedValue = readFloatFromEEPROM(_eepromAddress);
+  float storedValue = readFloatFromEEPROM();
 
   // Check if the stored value is within valid range
   if (storedValue >= 16.0f && storedValue <= 30.0f)
@@ -20,7 +20,7 @@ HATargetTemperatureX::HATargetTemperatureX(const char *uniqueId, const char *nam
   {
     // Use default value and write it to EEPROM
     setCurrentState(22.0f);
-    writeFloatToEEPROM(_eepromAddress, 22.0f);
+    writeFloatToEEPROM(22.0f);
   }
 
   setName(name);
@@ -31,16 +31,16 @@ HATargetTemperatureX::HATargetTemperatureX(const char *uniqueId, const char *nam
   onCommand(HATargetTemperatureX::onNumberCommand);
 }
 
-float HATargetTemperatureX::readFloatFromEEPROM(int16_t address)
+float HATargetTemperatureX::readFloatFromEEPROM()
 {
   float value = 0.0f;
-  EEPROM.get(address, value);
+  EEPROM.get(_eepromAddress, value);
   return value;
 }
 
-void HATargetTemperatureX::writeFloatToEEPROM(int16_t address, float value)
+void HATargetTemperatureX::writeFloatToEEPROM(float value)
 {
-  EEPROM.put(address, value);
+  EEPROM.put(_eepromAddress, value);
 #if defined(ESP8266) || defined(ESP32)
   EEPROM.commit(); // Necessary on ESP devices
 #endif
@@ -69,7 +69,7 @@ void HATargetTemperatureX::onNumberCommand(HANumeric number, HANumber *sender)
   // Only write to EEPROM if the value has changed
   if (floatValue != setting->getCurrentState().toFloat())
   {
-    setting->writeFloatToEEPROM(setting->_eepromAddress, floatValue);
+    setting->writeFloatToEEPROM(floatValue);
   }
 
   // Report the new state back to Home Assistant
