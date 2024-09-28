@@ -45,32 +45,32 @@ float SolarTemperatureReader::getSolarPaneTemperature(uint8_t &fault)
   {
     _solarSensor->clearFault();
 
-    String error = "Fault 0x" + String(fault, HEX);
-    if (fault & MAX31865_FAULT_HIGHTHRESH)
-    {
-      error += ", RTD High Threshold";
-    }
-    if (fault & MAX31865_FAULT_LOWTHRESH)
-    {
-      error += ", RTD Low Threshold";
-    }
-    if (fault & MAX31865_FAULT_REFINLOW)
-    {
-      error += ", REFIN- > 0.85 x Bias";
-    }
-    if (fault & MAX31865_FAULT_REFINHIGH)
-    {
-      error += ", REFIN- < 0.85 x Bias - FORCE- open";
-    }
-    if (fault & MAX31865_FAULT_RTDINLOW)
-    {
-      error += ", RTDIN- < 0.85 x Bias - FORCE- open";
-    }
-    if (fault & MAX31865_FAULT_OVUV)
-    {
-      error += ", Under/Over voltage";
-    }
-    Serial.println(error);
+    // String error = "Fault 0x" + String(fault, HEX);
+    // if (fault & MAX31865_FAULT_HIGHTHRESH)
+    // {
+    //   error += ", RTD High Threshold";
+    // }
+    // if (fault & MAX31865_FAULT_LOWTHRESH)
+    // {
+    //   error += ", RTD Low Threshold";
+    // }
+    // if (fault & MAX31865_FAULT_REFINLOW)
+    // {
+    //   error += ", REFIN- > 0.85 x Bias";
+    // }
+    // if (fault & MAX31865_FAULT_REFINHIGH)
+    // {
+    //   error += ", REFIN- < 0.85 x Bias - FORCE- open";
+    // }
+    // if (fault & MAX31865_FAULT_RTDINLOW)
+    // {
+    //   error += ", RTDIN- < 0.85 x Bias - FORCE- open";
+    // }
+    // if (fault & MAX31865_FAULT_OVUV)
+    // {
+    //   error += ", Under/Over voltage";
+    // }
+    // Serial.println(error);
     return NAN;
   }
 

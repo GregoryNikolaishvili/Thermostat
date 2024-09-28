@@ -275,7 +275,7 @@ void ProcessTemperatureSensors()
     Serial.println(TBottom);
     Serial.print(F("T3 = "));
     Serial.println(TTop);
-
+   
     if (!isValidT(TSolar))
     {
         errors |= ERR_SOLAR_T;

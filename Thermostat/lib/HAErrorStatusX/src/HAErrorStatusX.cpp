@@ -1,5 +1,4 @@
 #include "HAErrorStatusX.h"
-#include <EEPROM.h>
 
 HAErrorStatusX::HAErrorStatusX()
     : HASensor("error_state", HASensor::JsonAttributesFeature), _max31865_fault(0xFF), _errors(0xFF)
@@ -28,6 +27,6 @@ void HAErrorStatusX::setStatus(uint8_t max31865_fault, uint8_t errors)
   else
   {
     setValue("ok");
-    setJsonAttributes(nullptr);
+    setJsonAttributes("{\"max31865\":0,\"errors\":0}");
   }
 }
