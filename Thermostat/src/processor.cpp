@@ -7,9 +7,9 @@
 #include <HASettingX.h>
 #include <TinyJsonBuilder.h>
 
-const int TEMP_SENSOR_TANK_BOTTOM = 0;
-const int TEMP_SENSOR_TANK_TOP = 1;
-const int TEMP_SENSOR_ROOM = 2;
+const byte TEMP_SENSOR_TANK_BOTTOM = 0;
+const byte TEMP_SENSOR_TANK_TOP = 1;
+const byte TEMP_SENSOR_ROOM = 2;
 // const int TEMP_SENSOR_RESERVE_1 = 3;
 
 AlarmID_t heatingCirculationPumpStartingAlarm = 0xFF;
@@ -17,7 +17,7 @@ AlarmID_t heatingCirculationPumpStartingAlarm = 0xFF;
 bool isTankOverheated = false;
 
 // Define a buffer to hold the JSON string
-char jsonBuffer[256]; // Adjust size based on expected content
+char jsonBuffer[512]; // Adjust size based on expected content
 TinyJsonBuilder jsonBuilder(jsonBuffer, sizeof(jsonBuffer));
 
 extern HASelect *modeSelect;
@@ -35,6 +35,7 @@ extern TemperatureDS18B20 tankTemperatures;
 extern HASensorNumber *solarTemperatureSensor;
 extern HASensorNumber *tankTopTemperatureSensor;
 extern HASensorNumber *tankBottomTemperatureSensor;
+extern HASensorNumber *roomTemperatureSensor;
 extern HASensor *errorStatus;
 
 extern HASwitchX *heatingRecirculatingPump;
@@ -115,7 +116,8 @@ static void heatingCirculationPumpOnTimer()
 
 static void AllHeaterRelaysOn()
 {
-    for (int i = 0; i < MQTT_TEMPERATURE_SENSOR_COUNT; i++)
+    Serial.println("All heater relays ON");
+    for (byte i = 0; i < MQTT_TEMPERATURE_SENSOR_COUNT; i++)
     {
         HASwitchX *relay = roomSensors[i]->relay;
         if (relay != NULL)
@@ -127,7 +129,8 @@ static void AllHeaterRelaysOn()
 
 static void AllHeaterRelaysToDefault()
 {
-    for (int i = 0; i < MQTT_TEMPERATURE_SENSOR_COUNT; i++)
+    Serial.println("All heater relays to default");
+    for (byte i = 0; i < MQTT_TEMPERATURE_SENSOR_COUNT; i++)
     {
         HASwitchX *relay = roomSensors[i]->relay;
         if (relay != NULL)
@@ -146,7 +149,7 @@ void initThermostat()
     }
 }
 
-static bool CheckSolarPanel(int TSolar, TinyJsonBuilder &jsonBuilder)
+static bool CheckSolarPanel(float TSolar, TinyJsonBuilder &jsonBuilder)
 {
     if (!isValidT(TSolar))
         return false;
@@ -163,7 +166,7 @@ static bool CheckSolarPanel(int TSolar, TinyJsonBuilder &jsonBuilder)
             Serial.println(F("EMOF activated"));
         warning_EMOF_IsActivated = true;
 
-        jsonBuilder.addKeyValue(F("EMOF"), F("Max collector temperature protection is active"));
+        //jsonBuilder.addKeyValue(F("EMOF"), F("Max collector temperature protection is active"));
         return false;
     }
 
@@ -184,7 +187,7 @@ static bool CheckSolarPanel(int TSolar, TinyJsonBuilder &jsonBuilder)
             Serial.println(F("CFR activated"));
         }
 
-        jsonBuilder.addKeyValue(F("CFR"), F("Frost protection of collector is active"));
+        //jsonBuilder.addKeyValue(F("CFR"), F("Frost protection of collector is active"));
         return false;
     }
 
@@ -197,7 +200,7 @@ static bool CheckSolarPanel(int TSolar, TinyJsonBuilder &jsonBuilder)
     return true;
 }
 
-bool CheckTank(int TTank, TinyJsonBuilder &jsonBuilder)
+bool CheckTank(float TTank, TinyJsonBuilder &jsonBuilder)
 {
     if (!isValidT(TTank))
         return false;
@@ -217,7 +220,7 @@ bool CheckTank(int TTank, TinyJsonBuilder &jsonBuilder)
             Serial.println(F("ABSMAXT activated"));
         warning_MAXT_IsActivated = true;
 
-        jsonBuilder.addKeyValue(F("ABSMAXT"), F("Absolute maximum tank temperature protection is active"));
+        //jsonBuilder.addKeyValue(F("ABSMAXT"), F("Absolute maximum tank temperature protection is active"));
         return false;
     }
 
@@ -236,7 +239,7 @@ bool CheckTank(int TTank, TinyJsonBuilder &jsonBuilder)
             Serial.println(F("SMX activated"));
         warning_SMX_IsActivated = true;
 
-        jsonBuilder.addKeyValue(F("SMX"), F("Maximum tank temperature protection is active"));
+        //jsonBuilder.addKeyValue(F("SMX"), F("Maximum tank temperature protection is active"));
         return false;
     }
 
@@ -257,28 +260,29 @@ void ProcessTemperatureSensors()
     float TSolar = solarT->getSolarPaneTemperature(jsonBuilder);
     float TBottom = tankTemperatures.getTemperature(TEMP_SENSOR_TANK_BOTTOM); // Tank bottom
     float TTop = tankTemperatures.getTemperature(TEMP_SENSOR_TANK_TOP);       // Tank top
+    float TRoom = tankTemperatures.getTemperature(TEMP_SENSOR_ROOM);
 
 #ifdef SIMULATION_MODE
     TSolar = 60;
     TBottom = 30;
 #endif
-    //	Serial.print(F("T1 = ")); Serial.println(TSolar);
-    //	Serial.print(F("T2 = ")); Serial.println(T2);
-    //	Serial.print(F("T3 = ")); Serial.println(T3);
+    	Serial.print(F("T1 = ")); Serial.println(TSolar);
+    	Serial.print(F("T2 = ")); Serial.println(TBottom);
+    	Serial.print(F("T3 = ")); Serial.println(TTop);
 
     if (!isValidT(TSolar))
     {
-        jsonBuilder.addKeyValue(F("SolarPanel"), F("Solar sensor temperature is invalid"));
+        //jsonBuilder.addKeyValue(F("SolarPanel"), F("Solar sensor temperature is invalid"));
     }
 
     if (!isValidT(TBottom))
     {
-        jsonBuilder.addKeyValue(F("TankBottom"), F("Tank bottom temperature is invalid"));
+        //jsonBuilder.addKeyValue(F("TankBottom"), F("Tank bottom temperature is invalid"));
     }
 
     if (!isValidT(TTop))
     {
-        jsonBuilder.addKeyValue(F("TankTop"), F("Tank top temperature is invalid"));
+        //jsonBuilder.addKeyValue(F("TankTop"), F("Tank top temperature is invalid"));
     }
 
     // Read sensor data
@@ -315,8 +319,10 @@ void ProcessTemperatureSensors()
     if (!jsonBuilder.isEmpty())
     {
         errorStatus->setValue("error");
-        errorStatus->setJsonAttributes(jsonBuilder.getJson());
+        //const char *json = jsonBuilder.getJson();
+        //errorStatus->setJsonAttributes(json);
         jsonBuilder.reset();
+        //Serial.println(json);
     }
     else
     {
@@ -359,4 +365,7 @@ void ProcessTemperatureSensors()
     }
 
     solarTemperatureSensor->setValue(TSolar);
+    tankBottomTemperatureSensor->setValue(TBottom);
+    tankTopTemperatureSensor->setValue(TTop);
+    roomTemperatureSensor->setValue(TRoom);
 }

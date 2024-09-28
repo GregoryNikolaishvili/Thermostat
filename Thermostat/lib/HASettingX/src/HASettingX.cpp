@@ -10,10 +10,6 @@ HASettingX::HASettingX(const char *uniqueId, const char *name, int16_t defaultVa
   // Read value from EEPROM
   int16_t storedValue = readIntFromEEPROM(_eepromAddress);
 
-  Serial.print(name);
-  Serial.print(" ");
-  Serial.println(storedValue);
-
   // Check if the stored value is within valid range
   if (storedValue >= min && storedValue <= max)
   {
@@ -24,12 +20,6 @@ HASettingX::HASettingX(const char *uniqueId, const char *name, int16_t defaultVa
     // Use default value and write it to EEPROM
     setCurrentState(defaultValue);
     writeIntToEEPROM(_eepromAddress, defaultValue);
-
-    Serial.print("Default value saved: ");
-    Serial.print(defaultValue);
-    Serial.print("Rereading: ");
-    storedValue = readIntFromEEPROM(_eepromAddress);
-    Serial.println(storedValue);
   }
 
   setName(name);

@@ -33,7 +33,7 @@ void PressureReader::processPressureSensor()
 #else
   int newValue = _pressureAvg->process(25);
 #endif
-  _pressureSensor->setValue(newValue);
+  _pressureSensor->setValue(newValue / 100.0f);
 }
 
 // Returns pressure in Bars

@@ -148,8 +148,8 @@ void createHaObjects()
 	modeSelect->setCurrentState(0);
 
 	// Instantiate HASwitchX objects using new()
-	solarRecirculatingPump = new HASwitchX("solar_pump", "Solar pump", PIN_BL_SOLAR_PUMP, false);
-	heatingRecirculatingPump = new HASwitchX("heating_pump", "Heating pump", PIN_BL_CIRC_PUMP, false);
+	solarRecirculatingPump = new HASwitchX("solar_pump", "Solar pump", PIN_BL_SOLAR_PUMP, true);
+	heatingRecirculatingPump = new HASwitchX("heating_pump", "Heating pump", PIN_BL_CIRC_PUMP, true);
 
 	pressureSensor = new HASensorNumber("solar_pressure_sensor", HASensorNumber::PrecisionP1);
 	pressureSensor->setName("Solar pressure");
@@ -314,21 +314,21 @@ void initHaObjects()
 	device.enableLastWill();
 
 	solarRecirculatingPump->setState(true);
-	heatingRecirculatingPump->setState(true);
+	heatingRecirculatingPump->setState(false);
 
-	heatingRelayStairs2->setDefaultState(true);
-	heatingRelayWc2->setDefaultState(true);
-	heatingRelayHall2->setDefaultState(true);
-	heatingRelayGio->setDefaultState(true);
-	heatingRelayNana->setDefaultState(true);
-	heatingRelayGio3->setDefaultState(true);
-	heatingRelayGia->setDefaultState(true);
-	heatingRelayBar->setDefaultState(true);
-	heatingRelayHT->setDefaultState(true);
-	heatingRelayKitchen->setDefaultState(true);
-	heatingRelayHall1->setDefaultState(true);
-	heatingRelayStairs1->setDefaultState(true);
-	heatingRelayWc1->setDefaultState(true);
+	// heatingRelayStairs2->setDefaultState();
+	// heatingRelayWc2->setDefaultState();
+	// heatingRelayHall2->setDefaultState();
+	// heatingRelayGio->setDefaultState();
+	// heatingRelayNana->setDefaultState();
+	// heatingRelayGio3->setDefaultState();
+	// heatingRelayGia->setDefaultState();
+	// heatingRelayBar->setDefaultState();
+	// heatingRelayHT->setDefaultState();
+	// heatingRelayKitchen->setDefaultState();
+	// heatingRelayHall1->setDefaultState();
+	// heatingRelayStairs1->setDefaultState();
+	// heatingRelayWc1->setDefaultState();
 }
 
 void setup()
@@ -357,6 +357,8 @@ void setup()
 #endif
 
 	solarT = new SolarTemperatureReader(PIN_MAX31865_SELECT);
+
+	tankTemperatures.initialize();
 
 	setTime(0, 0, 1, 1, 1, 2001);
 
@@ -412,10 +414,10 @@ void onMessageReceived(const char *topic, const uint8_t *payload, uint16_t lengt
 		message += (char)payload[i];
 	}
 
-	Serial.print(F("Message arrived ["));
-	Serial.print(topic);
-	Serial.print(F("]: "));
-	Serial.println(message);
+	// Serial.print(F("Message arrived ["));
+	// Serial.print(topic);
+	// Serial.print(F("]: "));
+	// Serial.println(message);
 
 	// Iterate through all sensors to find a matching topic
 	for (int i = 0; i < MQTT_TEMPERATURE_SENSOR_COUNT; i++)
@@ -477,40 +479,42 @@ void processHeaterRelays()
 			continue;
 
 		float tempValue = sensor->value;
-		if (isnan(tempValue))
-		{
-			// Turn ON
-			if (!sensor->relay->isTurnedOn())
-			{
-				sensor->relay->setOnOff(HIGH);
-				Serial.print(F("Heating Relay "));
-				Serial.print(i + 1);
-				Serial.println(F(" turned ON."));
-			}
-			continue;
-		}
-
 		float targetTemp = sensor->targetTemperature->getCurrentState().toFloat(); // Get current target temperature
-		float hysteresis = 0.5;													   // Define hysteresis value
+		float hysteresis = 0.2f;												   // Define hysteresis value
 
-		if (tempValue < (targetTemp - hysteresis))
+		// Serial.print(F("Room: "));
+		// Serial.println(sensor->topic);
+		// Serial.print(F("T: "));
+		// Serial.println(tempValue);
+		// Serial.print(F("TT: "));
+		// Serial.println(targetTemp);
+
+		bool turnOn = false;
+
+		if (targetTemp > 16.0f)
 		{
-			if (!sensor->relay->isTurnedOn())
+			if (isnan(tempValue))
 			{
-				sensor->relay->setOnOff(HIGH);
-				Serial.print(F("Heating Relay "));
-				Serial.print(i + 1);
-				Serial.println(F(" turned ON."));
+				turnOn = true;
+				Serial.println(F("Invalid room temperature"));
 			}
-		}
-		else if (tempValue > (targetTemp + hysteresis))
-		{
-			if (sensor->relay->isTurnedOn())
+			else if (tempValue < (targetTemp - hysteresis))
 			{
-				sensor->relay->setOnOff(LOW);
+				turnOn = true;
+			}
+			else if (tempValue > (targetTemp + hysteresis))
+			{
+				turnOn = false;
+			}
+
+			// Turn ON
+			if (turnOn != sensor->relay->isTurnedOn())
+			{
+				sensor->relay->setOnOff(turnOn);
 				Serial.print(F("Heating Relay "));
 				Serial.print(i + 1);
-				Serial.println(F(" turned OFF."));
+				Serial.print(F(" turned "));
+				Serial.println(turnOn);
 			}
 		}
 	}

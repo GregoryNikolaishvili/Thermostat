@@ -1,8 +1,9 @@
 #include "SolarTemperatureReader.h"
+#include <math.h>
 
-#ifndef T_UNDEFINED
-#define T_UNDEFINED 999
-#endif
+// #ifndef T_UNDEFINED
+// #define T_UNDEFINED 999
+// #endif
 
 SolarTemperatureReader::SolarTemperatureReader(int8_t spi_cs)
 {
@@ -70,9 +71,9 @@ float SolarTemperatureReader::getSolarPaneTemperature(TinyJsonBuilder &jsonBuild
       error += ", Under/Over voltage";
     }
 
-    jsonBuilder.addKeyValue(F("MAX31865"), (int)fault);
+    //jsonBuilder.addKeyValue(F("MAX31865"), (int)fault);
     Serial.println(error);
-    return T_UNDEFINED;
+    return NAN;
   }
 
   return round(temperature); // 1 degree precision is enough

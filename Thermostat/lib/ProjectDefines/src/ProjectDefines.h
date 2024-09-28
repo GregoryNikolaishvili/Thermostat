@@ -1,7 +1,7 @@
 #ifndef PROJECT_DEFINES_H
 #define PROJECT_DEFINES_H
 
-#define SIMULATION_MODE
+//#define SIMULATION_MODE
 
 #define REQUIRESALARMS false // FOR DS18B20 library
 

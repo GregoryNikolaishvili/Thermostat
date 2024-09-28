@@ -11,7 +11,7 @@ public:
     
     bool isTurnedOn();
     void setOnOff(bool on);
-    void setDefaultState(const bool force = false);
+    void setDefaultState();
 
     inline byte getPin() const
     {
