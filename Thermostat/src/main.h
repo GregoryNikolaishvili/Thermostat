@@ -5,16 +5,16 @@
 #include <Arduino.h>
 #include <TemperatureDS18B20.h>
 #include <SolarTemperatureReader.h>
-#include <HASwitchX.h>
+#include <HAHeatingX.h>
 
-#define CONTROLLER__VERSION "4.0.6"
+#define CONTROLLER__VERSION "4.0.7"
 
 struct RoomTemperatureSensor
 {
   const char *topic;           // MQTT topic for receiving temperature data
   float value;                 // Current temperature value
   HANumber *targetTemperature; // Target temperature managed by HA
-  HASwitchX *relay;            // Pointer to the associated heating relay
+  HAHeatingX *relay;            // Pointer to the associated heating relay
 };
 
 // Error flags

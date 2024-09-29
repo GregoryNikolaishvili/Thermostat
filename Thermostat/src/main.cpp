@@ -33,7 +33,8 @@
 
 #include <ArduinoHA.h>
 
-#include <HASwitchX.h>
+#include <HAPumpX.h>
+#include <HAHeatingX.h>
 #include <HATargetTemperatureX.h>
 #include <HATargetTemperaturePoolX.h>
 #include <HASettingX.h>
@@ -79,24 +80,23 @@ HASensorNumber *roomTemperatureSensor;
 
 HAErrorStatusX *errorStatus;
 
-// Declare pointers for HASwitchX instances
-HASwitchX *solarRecirculatingPump;
-HASwitchX *heatingRecirculatingPump;
+HAPumpX *solarRecirculatingPump;
+HAPumpX *heatingRecirculatingPump;
 
 // Declare heating relay pointers
-HASwitchX *heatingRelayStairs2;
-HASwitchX *heatingRelayWc2;
-HASwitchX *heatingRelayHall2;
-HASwitchX *heatingRelayGio;
-HASwitchX *heatingRelayNana;
-HASwitchX *heatingRelayGio3;
-HASwitchX *heatingRelayGia;
-HASwitchX *heatingRelayBar;
-HASwitchX *heatingRelayHT;
-HASwitchX *heatingRelayKitchen;
-HASwitchX *heatingRelayHall1;
-HASwitchX *heatingRelayStairs1;
-HASwitchX *heatingRelayWc1;
+HAHeatingX *heatingRelayStairs2;
+HAHeatingX *heatingRelayWc2;
+HAHeatingX *heatingRelayHall2;
+HAHeatingX *heatingRelayGio;
+HAHeatingX *heatingRelayNana;
+HAHeatingX *heatingRelayGio3;
+HAHeatingX *heatingRelayGia;
+HAHeatingX *heatingRelayBar;
+HAHeatingX *heatingRelayHT;
+HAHeatingX *heatingRelayKitchen;
+HAHeatingX *heatingRelayHall1;
+HAHeatingX *heatingRelayStairs1;
+HAHeatingX *heatingRelayWc1;
 
 // Declare HATargetTemperatureX pointers for each room
 HATargetTemperatureX *targetTemperatureBar;
@@ -147,9 +147,8 @@ void createHaObjects()
 	controllerMode = new HAModeX(EEPROM_ADDR_CONTROLLER_MODE);
 	controllerMode->onCommand(onControllerModeCommand);
 
-	// Instantiate HASwitchX objects using new()
-	solarRecirculatingPump = new HASwitchX("solar_pump", "Solar pump", PIN_BL_SOLAR_PUMP, true, false);
-	heatingRecirculatingPump = new HASwitchX("heating_pump", "Heating pump", PIN_BL_CIRC_PUMP, true, false);
+	solarRecirculatingPump = new HAPumpX("solar_pump", "Solar pump", PIN_BL_SOLAR_PUMP);
+	heatingRecirculatingPump = new HAPumpX("heating_pump", "Heating pump", PIN_BL_CIRC_PUMP);
 
 	pressureSensor = new HASensorNumber("solar_pressure_sensor", HASensorNumber::PrecisionP1);
 	pressureSensor->setName("Solar pressure");
@@ -193,19 +192,19 @@ void createHaObjects()
 	errorStatus = new HAErrorStatusX();
 
 	// Instantiate heating relay objects using new()
-	heatingRelayStairs2 = new HASwitchX("heating_relay_stairs_2", "ზედა კიბე", PIN_HR_1, false, false);
-	heatingRelayWc2 = new HASwitchX("heating_relay_wc_2", "ზედა WC", PIN_HR_2, false, false);
-	heatingRelayHall2 = new HASwitchX("heating_relay_hall_2", "ზალა 2", PIN_HR_3, false, false);
-	heatingRelayGio = new HASwitchX("heating_relay_gio", "გიო", PIN_HR_4, false, false);
-	heatingRelayNana = new HASwitchX("heating_relay_nana", "ნანა", PIN_HR_5, false, true);
-	heatingRelayGio3 = new HASwitchX("heating_relay_gio3", "გიო 3", PIN_HR_6, false, false);
-	heatingRelayGia = new HASwitchX("heating_relay_gia", "გია", PIN_HR_7, false, false);
-	heatingRelayBar = new HASwitchX("heating_relay_bar", "ბარი", PIN_HR_8, false, false);
-	heatingRelayHT = new HASwitchX("heating_relay_ht", "კინო", PIN_HR_9, false, false);
-	heatingRelayKitchen = new HASwitchX("heating_relay_kitchen", "სამზარეულო", PIN_HR_10, false, false);
-	heatingRelayHall1 = new HASwitchX("heating_relay_hall_1", "ზალა 1", PIN_HR_11, false, false);
-	heatingRelayStairs1 = new HASwitchX("heating_relay_stairs_1", "ქვედა კიბე", PIN_HR_12, false, false);
-	heatingRelayWc1 = new HASwitchX("heating_relay_wc_1", "ქვედა WC", PIN_HR_13, false, false);
+	heatingRelayStairs2 = new HAHeatingX("heating_relay_stairs_2", "ზედა კიბე", PIN_HR_1, VALVE_NO);
+	heatingRelayWc2 = new HAHeatingX("heating_relay_wc_2", "ზედა WC", PIN_HR_2, VALVE_NO);
+	heatingRelayHall2 = new HAHeatingX("heating_relay_hall_2", "ზალა 2", PIN_HR_3, VALVE_NO);
+	heatingRelayGio = new HAHeatingX("heating_relay_gio", "გიო", PIN_HR_4, VALVE_NO);
+	heatingRelayNana = new HAHeatingX("heating_relay_nana", "ნანა", PIN_HR_5, VALVE_NC);
+	heatingRelayGio3 = new HAHeatingX("heating_relay_gio3", "გიო 3", PIN_HR_6, VALVE_NO);
+	heatingRelayGia = new HAHeatingX("heating_relay_gia", "გია", PIN_HR_7, VALVE_NO);
+	heatingRelayBar = new HAHeatingX("heating_relay_bar", "ბარი", PIN_HR_8, VALVE_NO);
+	heatingRelayHT = new HAHeatingX("heating_relay_ht", "კინო", PIN_HR_9, VALVE_NO);
+	heatingRelayKitchen = new HAHeatingX("heating_relay_kitchen", "სამზარეულო", PIN_HR_10, VALVE_NO);
+	heatingRelayHall1 = new HAHeatingX("heating_relay_hall_1", "ზალა 1", PIN_HR_11, VALVE_NO);
+	heatingRelayStairs1 = new HAHeatingX("heating_relay_stairs_1", "ქვედა კიბე", PIN_HR_12, VALVE_NO);
+	heatingRelayWc1 = new HAHeatingX("heating_relay_wc_1", "ქვედა WC", PIN_HR_13, VALVE_NO);
 
 	// Instantiate HATargetTemperatureX objects using new()
 	targetTemperatureBar = new HATargetTemperatureX("target_temperature_bar", "ბარი", EEPROM_ADDR_TARGET_TEMPERATURE_BAR);
@@ -360,9 +359,9 @@ void setup()
 	if (eepromSavedVersion != EEPROM_CURRENT_VERSION)
 	{
 		eeprom_update_word(EEPROM_ADDR_VERSION, EEPROM_CURRENT_VERSION);
-		
+
 		for (int i = 2; i < STORAGE_ADDRESS_DS18B20_SETTINGS; i++)
-			eeprom_update_byte((uint8_t*)i, 0xFF); // Write 0xFF to each byte (erased state)
+			eeprom_update_byte((uint8_t *)i, 0xFF); // Write 0xFF to each byte (erased state)
 	}
 
 	solarT = new SolarTemperatureReader(PIN_MAX31865_SELECT);
@@ -505,33 +504,31 @@ void processHeaterRelays()
 		// Serial.print(F("TT: "));
 		// Serial.println(targetTemp);
 
-		bool turnOn = false;
+		bool openValve = false;
 
-		if (targetTemp > 16.0f)
+		if (targetTemp <= 16.0f)
 		{
 			if (isnan(tempValue))
 			{
-				turnOn = true;
+				openValve = true;
 				Serial.println(F("Invalid room temperature"));
 			}
 			else if (tempValue < (targetTemp - hysteresis))
 			{
-				turnOn = true;
+				openValve = true;
 			}
 			else if (tempValue > (targetTemp + hysteresis))
 			{
-				turnOn = false;
+				openValve = false;
 			}
+		}
 
-			// Turn ON
-			if (turnOn != sensor->relay->isTurnedOn())
-			{
-				sensor->relay->setOnOff(turnOn);
-				Serial.print(F("Heating Relay "));
-				Serial.print(i + 1);
-				Serial.print(F(" turned "));
-				Serial.println(turnOn);
-			}
+		if (openValve != sensor->relay->isOpen())
+		{
+			sensor->relay->setOpenClose(openValve);
+			Serial.print(F("Heating Relay "));
+			Serial.print(sensor->relay->uniqueId());
+			Serial.println(openValve ? "opened" : "closed");
 		}
 	}
 }

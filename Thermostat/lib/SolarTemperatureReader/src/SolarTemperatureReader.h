@@ -14,6 +14,8 @@ public:
 
 private:
   Adafruit_MAX31865* _solarSensor;
+  uint8_t _errorCount;
+  float _prevValue;
 };
 
 #endif

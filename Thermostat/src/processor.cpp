@@ -3,10 +3,11 @@
 #include <Adafruit_MAX31865.h>
 #include <SolarTemperatureReader.h>
 #include <TimeAlarms.h>
-#include <HASwitchX.h>
+#include <HAHeatingX.h>
 #include <HASettingX.h>
 #include <HAModeX.h>
 #include <HAErrorStatusX.h>
+#include <HAPumpX.h>
 
 const byte TEMP_SENSOR_TANK_BOTTOM = 0;
 const byte TEMP_SENSOR_TANK_TOP = 1;
@@ -33,8 +34,8 @@ extern HASensorNumber *tankBottomTemperatureSensor;
 extern HASensorNumber *roomTemperatureSensor;
 extern HAErrorStatusX *errorStatus;
 
-extern HASwitchX *heatingRecirculatingPump;
-extern HASwitchX *solarRecirculatingPump;
+extern HAPumpX *heatingRecirculatingPump;
+extern HAPumpX *solarRecirculatingPump;
 
 extern HASettingX *settingCollectorSwitchOnTempDiff;
 extern HASettingX *settingCollectorSwitchOffTempDiff;
@@ -114,10 +115,10 @@ static void AllHeaterRelaysOn()
     Serial.println("All heater relays ON");
     for (byte i = 0; i < MQTT_TEMPERATURE_SENSOR_COUNT; i++)
     {
-        HASwitchX *relay = roomSensors[i]->relay;
+        HAHeatingX *relay = roomSensors[i]->relay;
         if (relay != NULL)
         {
-            relay->setOnOff(HIGH);
+            relay->setOpenClose(true);
         }
     }
 }
@@ -127,7 +128,7 @@ static void AllHeaterRelaysToDefault()
     Serial.println("All heater relays to default");
     for (byte i = 0; i < MQTT_TEMPERATURE_SENSOR_COUNT; i++)
     {
-        HASwitchX *relay = roomSensors[i]->relay;
+        HAHeatingX *relay = roomSensors[i]->relay;
         if (relay != NULL)
         {
             relay->setDefaultState();

@@ -10,6 +10,9 @@ SolarTemperatureReader::SolarTemperatureReader(int8_t spi_cs)
   pinMode(spi_cs, OUTPUT);
   digitalWrite(spi_cs, HIGH); // Disable MAX31865
 
+  _errorCount = 0;
+  _prevValue = NAN;
+
   _solarSensor = new Adafruit_MAX31865(spi_cs);
 
   _solarSensor->begin(MAX31865_2WIRE);
@@ -44,6 +47,12 @@ float SolarTemperatureReader::getSolarPaneTemperature(uint8_t &fault)
   if (fault)
   {
     _solarSensor->clearFault();
+    if (++_errorCount < 10)
+    {
+      return _prevValue;
+    }
+    _errorCount = 0;
+    return NAN;
 
     // String error = "Fault 0x" + String(fault, HEX);
     // if (fault & MAX31865_FAULT_HIGHTHRESH)
@@ -71,8 +80,9 @@ float SolarTemperatureReader::getSolarPaneTemperature(uint8_t &fault)
     //   error += ", Under/Over voltage";
     // }
     // Serial.println(error);
-    return NAN;
   }
 
-  return round(temperature); // 1 degree precision is enough
+  _errorCount = 0;
+  _prevValue = round(temperature);
+  return _prevValue; // 1 degree precision is enough
 }
