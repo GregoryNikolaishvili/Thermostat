@@ -2,19 +2,17 @@
 
 #include <Adafruit_MAX31865.h>
 #include <SolarTemperatureReader.h>
-#include <TimeAlarms.h>
 #include <HAHeatingX.h>
 #include <HASettingX.h>
 #include <HAModeX.h>
 #include <HAErrorStatusX.h>
 #include <HAPumpX.h>
+#include "pressure_reader.h"
 
 const byte TEMP_SENSOR_TANK_BOTTOM = 0;
 const byte TEMP_SENSOR_TANK_TOP = 1;
 const byte TEMP_SENSOR_ROOM = 2;
 // const int TEMP_SENSOR_RESERVE_1 = 3;
-
-AlarmID_t heatingCirculationPumpStartingAlarm = 0xFF;
 
 extern HAModeX *controllerMode;
 extern RoomTemperatureSensor *roomSensors[MQTT_TEMPERATURE_SENSOR_COUNT];
@@ -34,8 +32,9 @@ extern HASensorNumber *tankBottomTemperatureSensor;
 extern HASensorNumber *roomTemperatureSensor;
 extern HAErrorStatusX *errorStatus;
 
-extern HAPumpX *heatingRecirculatingPump;
 extern HAPumpX *solarRecirculatingPump;
+extern HAPumpX *heatingRecirculatingPump;
+extern HABinarySensor *heatingRecirculatingPumpStarting;
 
 extern HASettingX *settingCollectorSwitchOnTempDiff;
 extern HASettingX *settingCollectorSwitchOffTempDiff;
@@ -47,13 +46,19 @@ extern HASettingX *settingAbsoluteMaxTankT;
 extern HASettingX *settingPoolSwitchOnT;
 extern HASettingX *settingPoolSwitchOffT;
 
+extern PressureReader *pressureReader;
+
 extern String pool_pump_state;
 
-static void heatingCirculationPumpOnTimer();
+extern unsigned long secondTicks;
+unsigned long heatingCirculationPumpOnSeconds = 0;
 
-static void solarPumpOn()
+// static void heatingCirculationPumpOnTimer();
+
+static void solarPumpOn(float pressure)
 {
-    solarRecirculatingPump->setOnOff(HIGH);
+    if (pressure >= 0.5f)
+        solarRecirculatingPump->setOnOff(HIGH);
 }
 
 void solarPumpOff()
@@ -66,48 +71,47 @@ bool isSolarPumpOn()
     return solarRecirculatingPump->isTurnedOn();
 }
 
-boolean isHeatingCirculationPumpStarting()
+static bool canStartHearingCirculationPump()
 {
-    return heatingCirculationPumpStartingAlarm < 0xFF;
+    return secondTicks >= heatingCirculationPumpOnSeconds;
 }
 
 static void heatingCirculationPumpOn()
 {
-    if (isHeatingCirculationPumpStarting() || heatingRecirculatingPump->isTurnedOn())
+    Serial.println("Heating pump on requested");
+    Serial.println(heatingCirculationPumpOnSeconds - secondTicks);
+
+    if (heatingRecirculatingPump->isTurnedOn())
         return;
 
     if (controllerMode->getCurrentState() == THERMOSTAT_MODE_WINTER) // needs 5 min delay
     {
-        heatingCirculationPumpStartingAlarm = Alarm.alarmOnce(elapsedSecsToday(now()) + CIRCULATING_PUMP_ON_DELAY_MINUTES * 60, heatingCirculationPumpOnTimer);
-
+        if (heatingCirculationPumpOnSeconds == 0)
+        {
+            heatingCirculationPumpOnSeconds = secondTicks + CIRCULATING_PUMP_ON_DELAY_MINUTES * 60;
+            heatingRecirculatingPumpStarting->setState(true);
+        }
+        else if (canStartHearingCirculationPump())
+        {
+            heatingCirculationPumpOnSeconds = 0;
+            heatingRecirculatingPump->setOnOff(HIGH);
+            heatingRecirculatingPumpStarting->setState(false);
+        }
         // PublishBoilerRelayState(BL_CIRC_PUMP, false); // will publish standby mode
     }
     else
     {
         heatingRecirculatingPump->setOnOff(HIGH);
+        heatingRecirculatingPumpStarting->setState(false);
     }
 }
 
 static void heatingCirculationPumpOff()
 {
-    if (heatingCirculationPumpStartingAlarm < 0xFF)
-    {
-        Alarm.free(heatingCirculationPumpStartingAlarm);
-        heatingCirculationPumpStartingAlarm = 0xFF;
-    }
+    heatingCirculationPumpOnSeconds = 0;
 
     heatingRecirculatingPump->setOnOff(LOW);
-}
-
-static void heatingCirculationPumpOnTimer()
-{
-    if (heatingCirculationPumpStartingAlarm < 0xFF)
-    {
-        Alarm.free(heatingCirculationPumpStartingAlarm);
-        heatingCirculationPumpStartingAlarm = 0xFF;
-    }
-
-    heatingCirculationPumpOn();
+    heatingRecirculatingPumpStarting->setState(false);
 }
 
 static void AllHeaterRelaysOn()
@@ -146,7 +150,7 @@ void initThermostat(int16_t mode)
     }
 }
 
-static bool CheckSolarPanel(float TSolar, uint8_t &errors)
+static bool CheckSolarPanel(float TSolar, uint8_t &errors, float pressure)
 {
     if (!isValidT(TSolar))
         return false;
@@ -177,7 +181,7 @@ static bool CheckSolarPanel(float TSolar, uint8_t &errors)
     // Is solar collector too cold?
     if (TSolar <= settingCollectorAntifreezeT->getSettingValue()) // 4
     {
-        solarPumpOn();
+        solarPumpOn(pressure);
 
         if (!warning_CFR_IsActivated)
         {
@@ -266,6 +270,11 @@ void ProcessTemperatureSensors()
     float TTop = tankTemperatures.getTemperature(TEMP_SENSOR_TANK_TOP);       // Tank top
     float TRoom = tankTemperatures.getTemperature(TEMP_SENSOR_ROOM);
 
+    float pressure = pressureReader->getLastPressure();
+
+    if (pressure < 0.5f)
+        solarPumpOff();
+
 #ifdef SIMULATION_MODE
     TSolar = 60;
     TBottom = 30;
@@ -276,7 +285,7 @@ void ProcessTemperatureSensors()
     Serial.println(TBottom);
     Serial.print(F("T3 = "));
     Serial.println(TTop);
-   
+
     if (!isValidT(TSolar))
     {
         errors |= ERR_SOLAR_T;
@@ -298,7 +307,7 @@ void ProcessTemperatureSensors()
     // Read sensor data
     if (!isValidT(TSolar))
     {
-        solarPumpOn();
+        solarPumpOn(pressure);
     }
 
     if (!isValidT(TTop))
@@ -322,7 +331,7 @@ void ProcessTemperatureSensors()
 
     ////////////////// End of Read sensor data
 
-    bool isSolarOk = CheckSolarPanel(TSolar, errors);
+    bool isSolarOk = CheckSolarPanel(TSolar, errors, pressure);
 
     CheckTank(TBoiler, errors);
 
@@ -332,7 +341,7 @@ void ProcessTemperatureSensors()
     {
         if (!isSolarPumpOn() && (TSolar >= TBottom + settingCollectorSwitchOnTempDiff->getSettingValue()))
         {
-            solarPumpOn();
+            solarPumpOn(pressure);
         }
         else if (isSolarPumpOn() && (TSolar < TBottom + settingCollectorSwitchOffTempDiff->getSettingValue()))
         {
@@ -366,4 +375,76 @@ void ProcessTemperatureSensors()
     tankBottomTemperatureSensor->setValue(TBottom);
     tankTopTemperatureSensor->setValue(TTop);
     roomTemperatureSensor->setValue(TRoom);
+}
+
+void processHeaterRelays()
+{
+    if (warning_MAXT_IsActivated || controllerMode->getCurrentState() != THERMOSTAT_MODE_WINTER)
+    {
+        return;
+    }
+
+    bool atLeastOneIsOpen = false;
+
+    // Iterate through all sensors to find a relay
+    for (int i = 0; i < MQTT_TEMPERATURE_SENSOR_COUNT; i++)
+    {
+        RoomTemperatureSensor *sensor = roomSensors[i];
+        HAHeatingX *relay = sensor->relay;
+        if (relay == NULL || sensor->targetTemperature == NULL)
+            continue;
+
+        float tempValue = sensor->value;
+        float targetTemp = sensor->targetTemperature->getCurrentState().toFloat(); // Get current target temperature
+        float hysteresis = 0.2f;                                                   // Define hysteresis value
+
+        bool openValve = false;
+
+        if (targetTemp > 16.0f)
+        {
+            if (isnan(tempValue))
+            {
+                openValve = true;
+                Serial.println(F("Invalid room temperature"));
+            }
+            else if (tempValue < (targetTemp - hysteresis))
+            {
+                openValve = true;
+            }
+            else if (tempValue > (targetTemp + hysteresis))
+            {
+                openValve = false;
+            }
+        }
+        else
+        {
+            relay->setDefaultState();
+        }
+
+        if (openValve)
+            atLeastOneIsOpen = true;
+
+        Serial.print(relay->uniqueId());
+        Serial.print(F(", T: "));
+        Serial.print(tempValue);
+        Serial.print(F(", TT: "));
+        Serial.print(targetTemp);
+        Serial.print(F(", Open?: "));
+        Serial.println(openValve);
+        Serial.print(F(", IsOpen?: "));
+        Serial.println(relay->isOpen());
+
+        if (openValve != relay->isOpen())
+        {
+            relay->setOpenClose(openValve);
+            // Serial.print(F("Heating Relay "));
+            // Serial.print(relay->uniqueId());
+            // Serial.println(openValve ? " opened" : " closed");
+        }
+    }
+
+    if (atLeastOneIsOpen)
+        heatingCirculationPumpOn();
+    else
+        heatingCirculationPumpOff();
 }

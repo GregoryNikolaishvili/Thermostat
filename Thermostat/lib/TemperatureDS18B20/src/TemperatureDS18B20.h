@@ -1,8 +1,6 @@
 #ifndef _TEMPERATURE_DS18B20_H
 #define _TEMPERATURE_DS18B20_H
 
-//#define REQUIRESALARMS false
-
 #include <ProjectDefines.h>
 #include <Arduino.h>
 #include <DallasTemperature.h>

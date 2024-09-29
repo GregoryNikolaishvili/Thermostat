@@ -4,4 +4,5 @@
 void initThermostat(int16_t mode);
 void ProcessTemperatureSensors();
 
+void processHeaterRelays();
 #endif

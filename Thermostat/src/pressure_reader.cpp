@@ -3,6 +3,7 @@
 
 PressureReader::PressureReader(HASensorNumber *pressureSensor)
 {
+  _lastValue = 1.5f;
   _pressureSensor = pressureSensor;
 
   _pressureAvg = new MovingAverageFilter(5, PRESSURE_ERR_VALUE);
@@ -12,7 +13,12 @@ PressureReader::PressureReader(HASensorNumber *pressureSensor)
 void PressureReader::processPressureSensor()
 {
 #ifndef SIMULATION_MODE
-  int value = analogRead(PIN_PRESSURE_SENSOR);
+  int value = analogRead(PIN_PRESSURE_SENSOR) - 47;
+  if (value < 0)
+    value = 0;
+  // Serial.print("Pressure voltage");
+  // Serial.println(value);
+  
   // Sensor output voltage
   float V = value * 5.00 / 1024; // 5.00 is reference voltage
   // Calculate water pressure

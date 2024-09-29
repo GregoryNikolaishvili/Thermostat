@@ -52,6 +52,10 @@ float SolarTemperatureReader::getSolarPaneTemperature(uint8_t &fault)
       return _prevValue;
     }
     _errorCount = 0;
+    Serial.print(F("PT1000 fault: "));
+    Serial.print(fault);
+    Serial.print(F(", count: "));
+    Serial.println(_errorCount);
     return NAN;
 
     // String error = "Fault 0x" + String(fault, HEX);

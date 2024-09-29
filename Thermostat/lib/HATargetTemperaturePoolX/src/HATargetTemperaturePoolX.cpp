@@ -5,5 +5,5 @@ HATargetTemperaturePoolX::HATargetTemperaturePoolX(const char *uniqueId, const c
 {
   setStep(1);
   setIcon("mdi:pool-thermometer");
-  setMode(HANumber::ModeAuto);
+  setMode(HANumber::ModeBox);
 }

@@ -41,8 +41,7 @@
 #include <HAModeX.h>
 #include <HAErrorStatusX.h>
 
-#include <TimeLib.h>	// https://github.com/PaulStoffregen/Time
-#include <TimeAlarms.h> // https://github.com/PaulStoffregen/TimeAlarms
+#include <TimeLib.h> // https://github.com/PaulStoffregen/Time
 
 #if defined(__AVR_ATmega2560__)
 #include <avr/wdt.h>
@@ -82,6 +81,7 @@ HAErrorStatusX *errorStatus;
 
 HAPumpX *solarRecirculatingPump;
 HAPumpX *heatingRecirculatingPump;
+HABinarySensor *heatingRecirculatingPumpStarting;
 
 // Declare heating relay pointers
 HAHeatingX *heatingRelayStairs2;
@@ -130,7 +130,7 @@ HASettingX *settingPoolSwitchOffT;
 
 extern bool warning_MAXT_IsActivated;
 
-PressureReader *pressure;
+PressureReader *pressureReader;
 TemperatureDS18B20 tankTemperatures(PIN_ONE_WIRE_BUS, STORAGE_ADDRESS_DS18B20_SETTINGS);
 
 const char *pool_pump_switch_topic = "home/switch/pool_pump";
@@ -149,6 +149,10 @@ void createHaObjects()
 
 	solarRecirculatingPump = new HAPumpX("solar_pump", "Solar pump", PIN_BL_SOLAR_PUMP);
 	heatingRecirculatingPump = new HAPumpX("heating_pump", "Heating pump", PIN_BL_CIRC_PUMP);
+	heatingRecirculatingPumpStarting = new HABinarySensor("heating_pump_starting");
+
+	// heatingRecirculatingPumpStarting->setIcon();
+	heatingRecirculatingPumpStarting->setName("Heating pump starting");
 
 	pressureSensor = new HASensorNumber("solar_pressure_sensor", HASensorNumber::PrecisionP1);
 	pressureSensor->setName("Solar pressure");
@@ -157,7 +161,7 @@ void createHaObjects()
 	pressureSensor->setDeviceClass("pressure");
 	pressureSensor->setStateClass("measurement");
 
-	pressure = new PressureReader(pressureSensor);
+	pressureReader = new PressureReader(pressureSensor);
 
 	// Instantiate HASensorNumber objects using new()
 	solarTemperatureSensor = new HASensorNumber("solar_temperature", HASensorNumber::PrecisionP0);
@@ -481,58 +485,6 @@ void onControllerModeCommand(int8_t index, HASelect *sender)
 	}
 }
 
-void processHeaterRelays()
-{
-	if (warning_MAXT_IsActivated || controllerMode->getCurrentState() != THERMOSTAT_MODE_WINTER)
-		return;
-
-	// Iterate through all sensors to find a relay
-	for (int i = 0; i < MQTT_TEMPERATURE_SENSOR_COUNT; i++)
-	{
-		RoomTemperatureSensor *sensor = roomSensors[i];
-		if (sensor->relay == NULL || sensor->targetTemperature == NULL)
-			continue;
-
-		float tempValue = sensor->value;
-		float targetTemp = sensor->targetTemperature->getCurrentState().toFloat(); // Get current target temperature
-		float hysteresis = 0.2f;												   // Define hysteresis value
-
-		// Serial.print(F("Room: "));
-		// Serial.println(sensor->topic);
-		// Serial.print(F("T: "));
-		// Serial.println(tempValue);
-		// Serial.print(F("TT: "));
-		// Serial.println(targetTemp);
-
-		bool openValve = false;
-
-		if (targetTemp <= 16.0f)
-		{
-			if (isnan(tempValue))
-			{
-				openValve = true;
-				Serial.println(F("Invalid room temperature"));
-			}
-			else if (tempValue < (targetTemp - hysteresis))
-			{
-				openValve = true;
-			}
-			else if (tempValue > (targetTemp + hysteresis))
-			{
-				openValve = false;
-			}
-		}
-
-		if (openValve != sensor->relay->isOpen())
-		{
-			sensor->relay->setOpenClose(openValve);
-			Serial.print(F("Heating Relay "));
-			Serial.print(sensor->relay->uniqueId());
-			Serial.println(openValve ? "opened" : "closed");
-		}
-	}
-}
-
 static void oncePer1Minute()
 {
 	processHeaterRelays();
@@ -572,7 +524,7 @@ void oncePerHalfSecond(void)
 
 	if (halfSecondTicks % PROCESS_INTERVAL_BOILER_TEMPERATURE_SENSOR_HALF_SEC == 0)
 	{
-		pressure->processPressureSensor();
+		pressureReader->processPressureSensor();
 #ifndef SIMULATION_MODE
 		ProcessTemperatureSensors();
 #endif
@@ -598,7 +550,6 @@ void loop()
 		oncePerHalfSecond();
 	}
 
-	Alarm.delay(0);
 #ifndef SIMULATION_MODE
 	Ethernet.maintain();
 #endif

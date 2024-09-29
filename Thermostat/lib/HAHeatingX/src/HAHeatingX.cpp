@@ -21,7 +21,17 @@ bool HAHeatingX::isOpen()
 
 void HAHeatingX::setOpenClose(bool open)
 {
-  digitalWrite(_pinId, _normallyOpen);
+  Serial.print(uniqueId());
+  Serial.print(' ');
+  Serial.print(_pinId);
+  Serial.print(' ');
+  Serial.println(open);
+
+  if (open)
+    digitalWrite(_pinId, !_normallyOpen);
+  else
+    digitalWrite(_pinId, _normallyOpen);
+
   setState(open); // report state back to Home Assistant
 }
 

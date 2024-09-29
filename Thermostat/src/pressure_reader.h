@@ -11,11 +11,18 @@
 class PressureReader
 {
 public:
-	PressureReader(HASensorNumber* pressureSensor);
+	PressureReader(HASensorNumber *pressureSensor);
 
 	void processPressureSensor();
 	float getPressure();
+
+	inline float getLastPressure()
+	{
+		return _lastValue;
+	}
+
 private:
+	float _lastValue;
 	HASensorNumber *_pressureSensor;
 	MovingAverageFilter *_pressureAvg;
 };

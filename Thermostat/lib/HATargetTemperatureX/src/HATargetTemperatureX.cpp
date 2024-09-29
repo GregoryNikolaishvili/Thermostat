@@ -11,6 +11,10 @@ HATargetTemperatureX::HATargetTemperatureX(const char *uniqueId, const char *nam
   // Read value from EEPROM
   float storedValue = readFloatFromEEPROM();
 
+  // Serial.print(uniqueId);
+  // Serial.print(' ');
+  // Serial.println(storedValue);
+
   // Check if the stored value is within valid range
   if (storedValue >= 16.0f && storedValue <= 30.0f)
   {
