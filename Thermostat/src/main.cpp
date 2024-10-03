@@ -214,7 +214,7 @@ void createHaObjects()
 	targetTemperatureBar = new HATargetTemperatureX("target_temperature_bar", "ბარი", EEPROM_ADDR_TARGET_TEMPERATURE_BAR);
 	targetTemperatureHT = new HATargetTemperatureX("target_temperature_ht", "კინო", EEPROM_ADDR_TARGET_TEMPERATURE_HT);
 	targetTemperatureGio = new HATargetTemperatureX("target_temperature_gio", "გიო", EEPROM_ADDR_TARGET_TEMPERATURE_GIO);
-	targetTemperatureGio3 = new HATargetTemperatureX("target_temperature_gio3", "გიო 3", EEPROM_ADDR_TARGET_TEMPERATURE_GIO3);
+	targetTemperatureGio3 = new HATargetTemperatureX("target_temperature_gio_3", "გიო 3", EEPROM_ADDR_TARGET_TEMPERATURE_GIO3);
 	targetTemperatureKitchen = new HATargetTemperatureX("target_temperature_kitchen", "სამზარეულო", EEPROM_ADDR_TARGET_TEMPERATURE_KITCHEN);
 	targetTemperatureHall1 = new HATargetTemperatureX("target_temperature_hall_1", "ზალა 1", EEPROM_ADDR_TARGET_TEMPERATURE_HALL1);
 	targetTemperatureStairs1 = new HATargetTemperatureX("target_temperature_stairs_1", "ქვედა კიბე", EEPROM_ADDR_TARGET_TEMPERATURE_STAIRS1);
@@ -227,23 +227,23 @@ void createHaObjects()
 	targetTemperaturePool = new HATargetTemperaturePoolX("target_temperature_pool", "Pool", EEPROM_ADDR_TARGET_TEMPERATURE_POOL);
 
 	// Create RoomTemperatureSensor objects using new() for each sensor
-	roomSensors[0] = new RoomTemperatureSensor{"home/temperature/gw2000b_indoor_temperature", 0.0, targetTemperatureBar, heatingRelayBar};
-	roomSensors[1] = new RoomTemperatureSensor{"home/temperature/gw2000b_temperature_1", 0.0, targetTemperatureHT, heatingRelayHT};
-	roomSensors[2] = new RoomTemperatureSensor{"home/temperature/gw2000b_temperature_3", 0.0, targetTemperatureGio, heatingRelayGio};
-	roomSensors[3] = new RoomTemperatureSensor{"home/temperature/gw2000b_temperature_4", 0.0, targetTemperatureGio3, heatingRelayGio3};
+	roomSensors[0] = new RoomTemperatureSensor{"home/temperature/temperature_bar", 0.0, targetTemperatureBar, heatingRelayBar};
+	roomSensors[1] = new RoomTemperatureSensor{"home/temperature/temperature_ht", 0.0, targetTemperatureHT, heatingRelayHT};
+	roomSensors[2] = new RoomTemperatureSensor{"home/temperature/temperature_gio", 0.0, targetTemperatureGio, heatingRelayGio};
+	roomSensors[3] = new RoomTemperatureSensor{"home/temperature/temperature_gio_3", 0.0, targetTemperatureGio3, heatingRelayGio3};
 
-	roomSensors[4] = new RoomTemperatureSensor{"home/temperature/gw2000a_temperature_1", 0.0, targetTemperatureKitchen, heatingRelayKitchen};
-	roomSensors[5] = new RoomTemperatureSensor{"home/temperature/gw2000a_temperature_2", 0.0, targetTemperatureHall1, heatingRelayHall1};
-	roomSensors[6] = new RoomTemperatureSensor{"home/temperature/gw2000a_temperature_3", 0.0, targetTemperatureStairs1, heatingRelayStairs1};
-	roomSensors[7] = new RoomTemperatureSensor{"home/temperature/gw2000a_temperature_4", 0.0, targetTemperatureWC1, heatingRelayWc1};
-	roomSensors[8] = new RoomTemperatureSensor{"home/temperature/gw2000a_temperature_5", 0.0, targetTemperatureStairs2, heatingRelayStairs2};
-	roomSensors[9] = new RoomTemperatureSensor{"home/temperature/gw2000a_temperature_6", 0.0, targetTemperatureWC2, heatingRelayWc2};
-	roomSensors[10] = new RoomTemperatureSensor{"home/temperature/gw2000a_temperature_7", 0.0, targetTemperatureGia, heatingRelayGia};
-	roomSensors[11] = new RoomTemperatureSensor{"home/temperature/gw2000a_temperature_8", 0.0, targetTemperatureNana, heatingRelayNana};
-	roomSensors[12] = new RoomTemperatureSensor{"home/temperature/gw2000a_indoor_temperature", 0.0, targetTemperatureHall2, heatingRelayHall2};
+	roomSensors[4] = new RoomTemperatureSensor{"home/temperature/temperature_kitchen", 0.0, targetTemperatureKitchen, heatingRelayKitchen};
+	roomSensors[5] = new RoomTemperatureSensor{"home/temperature/temperature_hall_1", 0.0, targetTemperatureHall1, heatingRelayHall1};
+	roomSensors[6] = new RoomTemperatureSensor{"home/temperature/temperature_stairs_1", 0.0, targetTemperatureStairs1, heatingRelayStairs1};
+	roomSensors[7] = new RoomTemperatureSensor{"home/temperature/temperature_wc_1", 0.0, targetTemperatureWC1, heatingRelayWc1};
+	roomSensors[8] = new RoomTemperatureSensor{"home/temperature/temperature_stairs_2", 0.0, targetTemperatureStairs2, heatingRelayStairs2};
+	roomSensors[9] = new RoomTemperatureSensor{"home/temperature/temperature_wc_2", 0.0, targetTemperatureWC2, heatingRelayWc2};
+	roomSensors[10] = new RoomTemperatureSensor{"home/temperature/temperature_gia", 0.0, targetTemperatureGia, heatingRelayGia};
+	roomSensors[11] = new RoomTemperatureSensor{"home/temperature/temperature_nana", 0.0, targetTemperatureNana, heatingRelayNana};
+	roomSensors[12] = new RoomTemperatureSensor{"home/temperature/temperature_hall_2", 0.0, targetTemperatureHall2, heatingRelayHall2};
 
-	roomSensors[13] = new RoomTemperatureSensor{"home/temperature/gw2000b_temperature_8", 0.0, targetTemperaturePool, NULL};
-	roomSensors[14] = new RoomTemperatureSensor{"home/temperature/gw2000b_outdoor_temperature", 0.0, NULL, NULL};
+	roomSensors[13] = new RoomTemperatureSensor{"home/temperature/temperature_pool", 0.0, targetTemperaturePool, NULL};
+	roomSensors[14] = new RoomTemperatureSensor{"home/temperature/temperature_outdoor", 0.0, NULL, NULL};
 
 	// 1. Collector Switch-On Temperature Difference (ΔT On)
 	// The minimum temperature difference between the collector and the storage tank required to activate the circulation pump.

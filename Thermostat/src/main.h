@@ -7,7 +7,7 @@
 #include <SolarTemperatureReader.h>
 #include <HAHeatingX.h>
 
-#define CONTROLLER__VERSION "4.0.7"
+#define CONTROLLER__VERSION "4.0.8"
 
 struct RoomTemperatureSensor
 {
