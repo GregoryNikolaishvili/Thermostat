@@ -249,13 +249,15 @@ void createHaObjects()
 	// The minimum temperature difference between the collector and the storage tank required to activate the circulation pump.
 	// Optimal Value: 6°C
 	// Range: 4°C (min) to 15°C (max) to allow flexibility for different operating conditions.
-	settingCollectorSwitchOnTempDiff = new HASettingX("collector_switch_on_temp_diff", "Collector Switch-On Temperature Difference", 6, 4, 15, EEPROM_ADDR_COLLECTOR_SWITCH_ON_TEMP_DIFF);
+	settingCollectorSwitchOnTempDiff = new HASettingX("collector_switch_on_temp_diff", "Collector Switch-On Temperature Difference", 15, 10, 20, EEPROM_ADDR_COLLECTOR_SWITCH_ON_TEMP_DIFF);
+	// settingCollectorSwitchOnTempDiff = new HASettingX("collector_switch_on_temp_diff", "Collector Switch-On Temperature Difference", 6, 4, 15, EEPROM_ADDR_COLLECTOR_SWITCH_ON_TEMP_DIFF);
 
 	// 2. Collector Switch-Off Temperature Difference (ΔT Off)
 	// The temperature difference at which the circulation pump deactivates to prevent inefficient operation.
 	// Optimal Value: 3°C
 	// Range: 2°C (min) to 6°C (max) to prevent short cycling and maintain efficiency.
-	settingCollectorSwitchOffTempDiff = new HASettingX("collector_switch_off_temp_diff", "Collector Switch-Off Temperature Difference", 3, 2, 6, EEPROM_ADDR_COLLECTOR_SWITCH_OFF_TEMP_DIFF);
+	settingCollectorSwitchOffTempDiff = new HASettingX("collector_switch_off_temp_diff", "Collector Switch-Off Temperature Difference", 10, 6, 12, EEPROM_ADDR_COLLECTOR_SWITCH_OFF_TEMP_DIFF);
+	// settingCollectorSwitchOffTempDiff = new HASettingX("collector_switch_off_temp_diff", "Collector Switch-Off Temperature Difference", 3, 2, 6, EEPROM_ADDR_COLLECTOR_SWITCH_OFF_TEMP_DIFF);
 
 	// 3. Collector Emergency Switch-Off Temperature (EMOF)
 	// The maximum allowable temperature for the collector before the system shuts down to prevent damage.

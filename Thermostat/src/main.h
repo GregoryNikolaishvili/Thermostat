@@ -152,7 +152,7 @@ const byte PIN_HR_16 = D8;
 
 #endif
 
-#define EEPROM_CURRENT_VERSION 1
+#define EEPROM_CURRENT_VERSION 2
 
 #define EEPROM_ADDR_VERSION 0    // Address 0
 #define EEPROM_ADDR_CONTROLLER_MODE 2    // Address 2
