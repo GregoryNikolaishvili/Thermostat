@@ -353,7 +353,7 @@ void ProcessTemperatureSensors()
     {
         if (controllerMode->getCurrentState() == THERMOSTAT_MODE_SUMMER_POOL)
         {
-            if (pool_pump_state != "On")
+            if (pool_pump_state != "on")
             {
                 heatingCirculationPumpOff();
             }
