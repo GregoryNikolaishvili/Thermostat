@@ -1,28 +1,28 @@
 // ქვედა რიგი მარცხნიდან მარჯვნივ(სულ 8)
 //
-// 1. სამზარეულო
-// 2. ზალა 1 სამზარეულოსკენ როა
-// 3. ზალა 1 ეზოსკენ რომ იყურება
-// 4. კიბე ქვედა
-// 5. ქვედა ტუალეტი
-// 6. ზალა 1 კუთხეში
-// 7.  ბარის შესასვლელი
-// 8. ბარის ტუალეტი
+// 1. სამზარეულო					heatingRelayKitchen
+// 2. ზალა 1 სამზარეულოსკენ როა		heatingRelayHall1
+// 3. ზალა 1 ეზოსკენ რომ იყურება 	heatingRelayHall1
+// 4. კიბე ქვედა					heatingRelayStairs1
+// 5. ქვედა ტუალეტი					heatingRelayWc1
+// 6. ზალა 1 კუთხეში				heatingRelayHall1
+// 7. ბარის შესასვლელი				heatingRelayBar
+// 8. ბარის ტუალეტი					heatingRelayWc2
 //
 // ზედა რიგი მარცხნიდან მარჯვნივ(სულ 12)
 //
-// 1. ზედა კიბეები
-// 2. ზედა ტუალეტის საშრობი
-// 3. ზედა ტუალეტის რადიატორი
-// 4. ზალა 2 დიდი
-// 5. ზალა 2 პატარა
-// 6. გიო 1 და 2
-// 7. ნანა
-// 8. გიო 3
-// 9. გია
-// 10. ბარი(ბასეინისკენ)
-// 11. კინოთეატრი ქვედა ეზოსკენ
-// 12.  კინოთეატრი უკნისკენ(ფიჭვი)
+// 1. ზედა კიბეები					heatingRelayStairs2
+// 2. ზედა ტუალეტის საშრობი			heatingRelayWc2
+// 3. ზედა ტუალეტის რადიატორი		heatingRelayWc2
+// 4. ზალა 2 დიდი					heatingRelayHall2
+// 5. ზალა 2 პატარა					heatingRelayHall2
+// 6. გიო 1 და 2					heatingRelayGio
+// 7. ნანა							heatingRelayNana
+// 8. გიო 3							heatingRelayGio3
+// 9. გია							heatingRelayGia
+// 10. ბარი(ბასეინისკენ)				heatingRelayBar
+// 11. კინოთეატრი ქვედა ეზოსკენ		heatingRelayHT
+// 12. კინოთეატრი უკნისკენ(ფიჭვი)	heatingRelayHT
 
 #include <ProjectDefines.h>
 #include "main.h"
@@ -203,8 +203,8 @@ void createHaObjects()
 	heatingRelayNana = new HAHeatingX("heating_relay_nana", "ნანა", PIN_HR_5, VALVE_NC);
 	heatingRelayGio3 = new HAHeatingX("heating_relay_gio3", "გიო 3", PIN_HR_6, VALVE_NO);
 	heatingRelayGia = new HAHeatingX("heating_relay_gia", "გია", PIN_HR_7, VALVE_NO);
-	heatingRelayBar = new HAHeatingX("heating_relay_bar", "ბარი", PIN_HR_8, VALVE_NO);
-	heatingRelayHT = new HAHeatingX("heating_relay_ht", "კინო", PIN_HR_9, VALVE_NO);
+	heatingRelayBar = new HAHeatingX("heating_relay_bar", "ბარი", PIN_HR_8, VALVE_NC);
+	heatingRelayHT = new HAHeatingX("heating_relay_ht", "კინო", PIN_HR_9, VALVE_NC);
 	heatingRelayKitchen = new HAHeatingX("heating_relay_kitchen", "სამზარეულო", PIN_HR_10, VALVE_NO);
 	heatingRelayHall1 = new HAHeatingX("heating_relay_hall_1", "ზალა 1", PIN_HR_11, VALVE_NO);
 	heatingRelayStairs1 = new HAHeatingX("heating_relay_stairs_1", "ქვედა კიბე", PIN_HR_12, VALVE_NO);
