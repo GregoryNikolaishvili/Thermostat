@@ -7,7 +7,7 @@
 // 5. ქვედა ტუალეტი					heatingRelayWc1
 // 6. ზალა 1 კუთხეში				heatingRelayHall1
 // 7. ბარის შესასვლელი				heatingRelayBar
-// 8. ბარის ტუალეტი					heatingRelayWc2
+// 8. ბარის ტუალეტი					heatingRelayBar
 //
 // ზედა რიგი მარცხნიდან მარჯვნივ(სულ 12)
 //

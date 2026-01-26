@@ -1,0 +1,9 @@
+https://github.com/adafruit/Adafruit_BusIO
+Wire
+https://github.com/PaulStoffregen/Time
+DallasTemperature
+https://github.com/adafruit/Adafruit_MAX31865
+PubSubClient
+Ethernet
+OneWire
+TimeAlarms
